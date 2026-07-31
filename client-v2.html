@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<meta name="theme-color" content="#FFFFFF" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="HUEX" />
+<title>HUEX — Card Fidelitate</title>
+<link rel="manifest" href="/client/manifest.json" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/pocketbase@0.21.1/dist/pocketbase.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+:root{
+  --navy:#0D1B2A;
+  --navy-light:#1A2E42;
+  --blue:#3B9FE3;
+  --blue-light:#EBF5FD;
+  --white:#FFFFFF;
+  --bg:#F8F9FA;
+  --border:#E5E7EB;
+  --text:#0D1B2A;
+  --text-sec:#6B7280;
+  --green:#16A34A;
+  --green-bg:#DCFCE7;
+  --red:#DC2626;
+  --red-bg:#FEE2E2;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0;}
+html,body{height:100%;font-family:'Inter',sans-serif;}
+body{background:var(--bg);color:var(--text);overflow-x:hidden;}
+
+/* ===== AUTH ===== */
+.auth-wrap{min-height:100vh;display:flex;flex-direction:column;background:var(--white);}
+.auth-header{padding:48px 24px 32px;text-align:center;}
+.auth-header-logo{display:inline-flex;align-items:center;gap:8px;margin-bottom:32px;}
+.auth-logo-mark{width:40px;height:40px;background:var(--navy);border-radius:12px;display:flex;align-items:center;justify-content:center;}
+.auth-logo-mark span{color:var(--blue);font-size:20px;font-weight:900;font-family:'Inter',sans-serif;}
+.auth-logo-text{font-size:22px;font-weight:900;color:var(--navy);letter-spacing:-.02em;}
+.auth-logo-text em{color:var(--blue);font-style:normal;}
+.auth-title{font-size:26px;font-weight:800;color:var(--navy);letter-spacing:-.02em;margin-bottom:8px;}
+.auth-sub{font-size:15px;color:var(--text-sec);line-height:1.6;}
+.auth-body{flex:1;padding:0 24px 40px;}
+.auth-card{max-width:400px;margin:0 auto;}
+
+/* Fields */
+.field{margin-bottom:16px;}
+.field-label{font-size:12px;font-weight:600;color:var(--text);display:block;margin-bottom:6px;letter-spacing:.04em;text-transform:uppercase;}
+.input{width:100%;background:var(--white);border:1.5px solid var(--border);border-radius:12px;padding:14px 16px;font-size:16px;color:var(--text);font-family:inherit;outline:none;transition:border-color .2s;}
+.input:focus{border-color:var(--blue);}
+.input::placeholder{color:var(--text-sec);opacity:.7;}
+.input-row{display:flex;gap:8px;}
+.input-row .input{flex:1;}
+
+/* Buttons */
+.btn{width:100%;border:none;border-radius:12px;padding:15px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px;}
+.btn-navy{background:var(--navy);color:var(--white);}
+.btn-navy:hover{background:var(--navy-light);}
+.btn-navy:active{opacity:.9;}
+.btn-outline{background:var(--white);color:var(--navy);border:1.5px solid var(--border);}
+.btn-outline:hover{border-color:var(--navy);}
+.btn-sms{background:var(--bg);color:var(--text-sec);border:1.5px solid var(--border);font-size:14px;}
+.btn + .btn{margin-top:10px;}
+
+/* PIN Pad */
+.pin-display{display:flex;gap:12px;justify-content:center;margin:24px 0;}
+.pin-dot{width:16px;height:16px;border-radius:50%;border:2px solid var(--border);transition:all .2s;}
+.pin-dot.filled{background:var(--navy);border-color:var(--navy);}
+.pin-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;max-width:280px;margin:0 auto;}
+.pin-key{height:64px;background:var(--white);border:1.5px solid var(--border);border-radius:14px;font-size:22px;font-weight:700;color:var(--navy);cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;}
+.pin-key:active{background:var(--navy);color:var(--white);border-color:var(--navy);transform:scale(.96);}
+.pin-key.del{font-size:16px;color:var(--text-sec);}
+.pin-key.empty{opacity:0;pointer-events:none;}
+
+/* OTP */
+.otp-row{display:flex;gap:10px;justify-content:center;margin:20px 0;}
+.otp-box{width:48px;height:56px;background:var(--white);border:1.5px solid var(--border);border-radius:12px;font-size:24px;font-weight:700;color:var(--navy);text-align:center;font-family:'IBM Plex Mono',monospace;outline:none;transition:border-color .2s;}
+.otp-box:focus{border-color:var(--blue);}
+
+/* Alerts */
+.msg{font-size:13px;text-align:center;padding:10px;border-radius:8px;margin-top:12px;display:none;}
+.msg.show{display:block;}
+.msg.ok{background:var(--green-bg);color:var(--green);}
+.msg.err{background:var(--red-bg);color:var(--red);}
+
+/* SMS/Email choice */
+.method-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;}
+.method-card{border:1.5px solid var(--border);border-radius:12px;padding:16px 12px;text-align:center;cursor:pointer;transition:all .2s;}
+.method-card.active{border-color:var(--blue);background:var(--blue-light);}
+.method-card svg{width:24px;height:24px;margin-bottom:6px;color:var(--text-sec);}
+.method-card.active svg{color:var(--blue);}
+.method-card span{display:block;font-size:13px;font-weight:600;color:var(--text-sec);}
+.method-card.active span{color:var(--blue);}
+.method-card small{font-size:11px;color:var(--text-sec);}
+
+/* Divider */
+.or-divider{display:flex;align-items:center;gap:12px;margin:16px 0;}
+.or-divider span{font-size:12px;color:var(--text-sec);}
+.or-divider::before,.or-divider::after{content:'';flex:1;height:1px;background:var(--border);}
+
+/* ===== APP ===== */
+#screen-app{display:none;min-height:100vh;flex-direction:column;background:var(--bg);}
+
+/* Header */
+.app-topbar{background:var(--white);border-bottom:1px solid var(--border);padding:0 20px;height:56px;display:flex;align-items:center;justify-content:space-between;}
+.topbar-logo{font-size:18px;font-weight:900;color:var(--navy);letter-spacing:-.02em;}
+.topbar-logo em{color:var(--blue);font-style:normal;}
+.topbar-avatar{width:34px;height:34px;border-radius:50%;background:var(--navy);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--white);cursor:pointer;}
+
+/* QR Card hero */
+.qr-hero{background:var(--navy);padding:28px 20px 32px;}
+.qr-hero-inner{max-width:340px;margin:0 auto;display:flex;flex-direction:column;align-items:center;}
+.qr-card-wrap{background:var(--white);border-radius:20px;padding:20px;width:180px;height:180px;display:flex;align-items:center;justify-content:center;margin-bottom:16px;box-shadow:0 8px 32px rgba(0,0,0,.2);}
+.qr-name{font-size:16px;font-weight:700;color:var(--white);margin-bottom:4px;}
+.qr-code{font-family:'IBM Plex Mono',monospace;font-size:13px;color:rgba(255,255,255,.5);letter-spacing:.1em;}
+
+/* Content */
+.app-scroll{flex:1;overflow-y:auto;padding:20px;}
+
+/* Cards */
+.section-head{font-size:11px;font-weight:700;color:var(--text-sec);letter-spacing:.08em;text-transform:uppercase;margin-bottom:12px;}
+.store-card{background:var(--white);border:1.5px solid var(--border);border-radius:16px;padding:16px;display:flex;align-items:center;gap:14px;margin-bottom:10px;cursor:pointer;transition:border-color .2s,box-shadow .2s;}
+.store-card:hover{border-color:var(--blue);box-shadow:0 4px 16px rgba(59,159,227,.1);}
+.store-icon{width:44px;height:44px;border-radius:12px;background:var(--navy);display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:800;color:var(--white);flex-shrink:0;}
+.store-info{flex:1;min-width:0;}
+.store-name{font-size:14px;font-weight:700;color:var(--text);margin-bottom:2px;}
+.store-type{font-size:12px;color:var(--text-sec);}
+.store-badge{display:inline-flex;border-radius:999px;padding:2px 8px;font-size:10px;font-weight:700;margin-top:4px;}
+.store-right{text-align:right;flex-shrink:0;}
+.store-pts{font-family:'IBM Plex Mono',monospace;font-size:20px;font-weight:700;color:var(--navy);}
+.store-pts-label{font-size:11px;color:var(--text-sec);}
+.promo-tag{font-size:10px;color:#FF6B35;font-weight:700;margin-top:2px;}
+
+/* Tx */
+.tx-card{background:var(--white);border:1.5px solid var(--border);border-radius:14px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.tx-store{font-size:14px;font-weight:600;color:var(--text);}
+.tx-date{font-size:11px;color:var(--text-sec);margin-top:2px;}
+.tx-amt{font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:700;}
+.tx-status{font-size:10px;color:var(--text-sec);text-align:right;margin-top:2px;}
+
+/* Confirmare */
+.confirmare-card{background:var(--white);border:2px solid var(--blue);border-radius:16px;padding:20px;margin-bottom:16px;animation:pulseBorder 2s infinite;}
+@keyframes pulseBorder{0%,100%{border-color:var(--blue);}50%{border-color:#93C5FD;}}
+.confirmare-head{font-size:13px;font-weight:700;color:var(--blue);margin-bottom:4px;display:flex;align-items:center;gap:6px;}
+.confirmare-mag{font-size:16px;font-weight:800;color:var(--navy);margin-bottom:4px;}
+.confirmare-info{font-size:14px;color:var(--text-sec);margin-bottom:16px;}
+.confirmare-btns{display:flex;gap:10px;}
+.btn-confirm{flex:1;background:var(--green);color:#fff;border:none;border-radius:10px;padding:13px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;}
+.btn-refuse{flex:1;background:#fff;color:var(--red);border:1.5px solid var(--red);border-radius:10px;padding:13px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;}
+
+/* Profil */
+.profil-block{background:var(--white);border:1.5px solid var(--border);border-radius:16px;padding:20px;margin-bottom:14px;}
+.profil-avatar{width:64px;height:64px;border-radius:50%;background:var(--navy);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;color:#fff;margin:0 auto 14px;}
+.profil-name{font-size:18px;font-weight:800;color:var(--navy);text-align:center;margin-bottom:4px;}
+.profil-detail{font-size:13px;color:var(--text-sec);text-align:center;}
+.profil-row{display:flex;align-items:center;justify-content:space-between;padding:13px 0;border-bottom:1px solid var(--border);}
+.profil-row:last-child{border:none;}
+.profil-row-lbl{font-size:14px;color:var(--text);}
+.profil-row-val{font-size:13px;color:var(--text-sec);font-family:'IBM Plex Mono',monospace;}
+.btn-red{width:100%;background:#fff;color:var(--red);border:1.5px solid var(--red);border-radius:12px;padding:14px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:8px;}
+
+/* Bottom Nav */
+.bottom-nav{background:var(--white);border-top:1.5px solid var(--border);display:flex;padding:6px 0 calc(6px + env(safe-area-inset-bottom));}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 4px;cursor:pointer;color:var(--text-sec);font-size:10px;font-weight:600;letter-spacing:.02em;transition:color .2s;}
+.nav-item.active{color:var(--blue);}
+.nav-item svg{width:22px;height:22px;}
+
+/* Tab content */
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+
+/* Modal */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;display:none;align-items:flex-end;justify-content:center;}
+.modal-bg.open{display:flex;}
+.modal-sheet{background:#fff;border-radius:20px 20px 0 0;width:100%;max-width:500px;max-height:80vh;overflow-y:auto;padding:20px 20px 40px;}
+.modal-handle{width:40px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 20px;}
+.modal-ttl{font-size:17px;font-weight:800;color:var(--navy);margin-bottom:16px;}
+.promo-item{border:1.5px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:12px;}
+.promo-img{width:100%;height:130px;object-fit:cover;}
+.promo-body{padding:14px;}
+.promo-name{font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px;}
+.promo-desc{font-size:13px;color:var(--text-sec);margin-bottom:10px;}
+.promo-foot{display:flex;align-items:center;justify-content:space-between;}
+.promo-mult{background:#FF6B35;color:#fff;font-size:11px;font-weight:800;padding:3px 10px;border-radius:999px;}
+.promo-dates{font-size:11px;color:var(--text-sec);}
+
+/* Empty */
+.empty-state{text-align:center;padding:40px 20px;color:var(--text-sec);}
+.empty-state p{font-size:14px;}
+
+/* Loader */
+.loader{display:flex;align-items:center;justify-content:center;padding:40px;}
+.spinner{width:28px;height:28px;border:3px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* Banner */
+#banner{position:fixed;top:0;left:0;right:0;z-index:999;padding:14px 20px;font-size:14px;font-weight:600;text-align:center;transform:translateY(-100%);transition:transform .3s;}
+</style>
+</head>
+<body>
+
+<!-- ===== AUTH ===== -->
+<div id="screen-auth" class="auth-wrap">
+
+  <!-- STEP 1: Telefon -->
+  <div id="step-phone" style="display:flex;flex-direction:column;min-height:100vh;">
+    <div class="auth-header">
+      <div class="auth-header-logo">
+        <div class="auth-logo-mark"><span>H</span></div>
+        <div class="auth-logo-text">HUEX<em>.</em></div>
+      </div>
+      <div class="auth-title">Bun venit!</div>
+      <div class="auth-sub">Introdu numărul tău de telefon pentru a accesa cardul de fidelitate.</div>
+    </div>
+    <div class="auth-body">
+      <div class="auth-card">
+        <div class="field">
+          <label class="field-label">Număr de telefon</label>
+          <input type="tel" class="input" id="inp-phone" placeholder="07xx xxx xxx" inputmode="tel" />
+        </div>
+        <button class="btn btn-navy" onclick="checkPhone()">Continuă</button>
+        <div class="msg" id="msg-phone"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 2: Înregistrare - date -->
+  <div id="step-register" style="display:none;flex-direction:column;min-height:100vh;">
+    <div class="auth-header">
+      <div class="auth-title">Cont nou</div>
+      <div class="auth-sub">Completează datele tale pentru a crea contul HUEX.</div>
+    </div>
+    <div class="auth-body">
+      <div class="auth-card">
+        <div class="field">
+          <label class="field-label">Prenume</label>
+          <input type="text" class="input" id="inp-prenume" placeholder="Ion" />
+        </div>
+        <div class="field">
+          <label class="field-label">Nume</label>
+          <input type="text" class="input" id="inp-nume" placeholder="Popescu" />
+        </div>
+        <div class="field">
+          <label class="field-label">Email</label>
+          <input type="email" class="input" id="inp-email-reg" placeholder="email@exemplu.ro" />
+        </div>
+        <button class="btn btn-navy" onclick="doRegister()">Trimite codul de activare</button>
+        <button class="btn btn-outline" onclick="showStep('step-phone')" style="margin-top:10px;">← Înapoi</button>
+        <div class="msg" id="msg-register"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 3: Verificare cod activare -->
+  <div id="step-verify" style="display:none;flex-direction:column;min-height:100vh;">
+    <div class="auth-header">
+      <div class="auth-title">Activare cont</div>
+      <div class="auth-sub" id="verify-sub">Am trimis codul de activare.</div>
+    </div>
+    <div class="auth-body">
+      <div class="auth-card">
+        <!-- Metoda trimitere -->
+        <div class="method-row">
+          <div class="method-card active" id="method-email" onclick="selectMethod('email')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            <span>Email</span>
+            <small>Recomandat</small>
+          </div>
+          <div class="method-card" id="method-sms" onclick="selectMethod('sms')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 11 19.79 19.79 0 0 1 1.61 2.34 2 2 0 0 1 3.58 0h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 7.91"/></svg>
+            <span>SMS</span>
+            <small>În curând</small>
+          </div>
+        </div>
+        <div class="otp-row">
+          <input type="text" class="otp-box" maxlength="1" inputmode="numeric" id="v0" oninput="otpNav(this,0,'v')" />
+          <input type="text" class="otp-box" maxlength="1" inputmode="numeric" id="v1" oninput="otpNav(this,1,'v')" />
+          <input type="text" class="otp-box" maxlength="1" inputmode="numeric" id="v2" oninput="otpNav(this,2,'v')" />
+          <input type="text" class="otp-box" maxlength="1" inputmode="numeric" id="v3" oninput="otpNav(this,3,'v')" />
+          <input type="text" class="otp-box" maxlength="1" inputmode="numeric" id="v4" oninput="otpNav(this,4,'v')" />
+          <input type="text" class="otp-box" maxlength="1" inputmode="numeric" id="v5" oninput="otpNav(this,5,'v')" />
+        </div>
+        <button class="btn btn-navy" onclick="verifyCode()">Verifică codul</button>
+        <button class="btn btn-outline" onclick="resendCode()" style="margin-top:10px;">Retrimite codul</button>
+        <div class="msg" id="msg-verify"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 4: Seteaza PIN -->
+  <div id="step-set-pin" style="display:none;flex-direction:column;min-height:100vh;">
+    <div class="auth-header">
+      <div class="auth-title">Creează PIN-ul</div>
+      <div class="auth-sub">Alege un cod din 4 cifre pentru a accesa rapid aplicația.</div>
+    </div>
+    <div class="auth-body">
+      <div class="auth-card">
+        <div class="pin-display">
+          <div class="pin-dot" id="sp0"></div>
+          <div class="pin-dot" id="sp1"></div>
+          <div class="pin-dot" id="sp2"></div>
+          <div class="pin-dot" id="sp3"></div>
+        </div>
+        <div class="pin-pad">
+          <div class="pin-key" onclick="pinKey('set','1')">1</div>
+          <div class="pin-key" onclick="pinKey('set','2')">2</div>
+          <div class="pin-key" onclick="pinKey('set','3')">3</div>
+          <div class="pin-key" onclick="pinKey('set','4')">4</div>
+          <div class="pin-key" onclick="pinKey('set','5')">5</div>
+          <div class="pin-key" onclick="pinKey('set','6')">6</div>
+          <div class="pin-key" onclick="pinKey('set','7')">7</div>
+          <div class="pin-key" onclick="pinKey('set','8')">8</div>
+          <div class="pin-key" onclick="pinKey('set','9')">9</div>
+          <div class="pin-key empty"></div>
+          <div class="pin-key" onclick="pinKey('set','0')">0</div>
+          <div class="pin-key del" onclick="pinDel('set')">⌫</div>
+        </div>
+        <div class="msg" id="msg-set-pin"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 4b: Confirma PIN -->
+  <div id="step-confirm-pin" style="display:none;flex-direction:column;min-height:100vh;">
+    <div class="auth-header">
+      <div class="auth-title">Confirmă PIN-ul</div>
+      <div class="auth-sub">Introdu din nou codul pentru confirmare.</div>
+    </div>
+    <div class="auth-body">
+      <div class="auth-card">
+        <div class="pin-display">
+          <div class="pin-dot" id="cp0"></div>
+          <div class="pin-dot" id="cp1"></div>
+          <div class="pin-dot" id="cp2"></div>
+          <div class="pin-dot" id="cp3"></div>
+        </div>
+        <div class="pin-pad">
+          <div class="pin-key" onclick="pinKey('confirm','1')">1</div>
+          <div class="pin-key" onclick="pinKey('confirm','2')">2</div>
+          <div class="pin-key" onclick="pinKey('confirm','3')">3</div>
+          <div class="pin-key" onclick="pinKey('confirm','4')">4</div>
+          <div class="pin-key" onclick="pinKey('confirm','5')">5</div>
+          <div class="pin-key" onclick="pinKey('confirm','6')">6</div>
+          <div class="pin-key" onclick="pinKey('confirm','7')">7</div>
+          <div class="pin-key" onclick="pinKey('confirm','8')">8</div>
+          <div class="pin-key" onclick="pinKey('confirm','9')">9</div>
+          <div class="pin-key empty"></div>
+          <div class="pin-key" onclick="pinKey('confirm','0')">0</div>
+          <div class="pin-key del" onclick="pinDel('confirm')">⌫</div>
+        </div>
+        <div class="msg" id="msg-confirm-pin"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 5: Login cu PIN -->
+  <div id="step-login-pin" style="display:none;flex-direction:column;min-height:100vh;">
+    <div class="auth-header">
+      <div class="auth-header-logo">
+        <div class="auth-logo-mark"><span>H</span></div>
+        <div class="auth-logo-text">HUEX<em>.</em></div>
+      </div>
+      <div class="auth-title" id="login-name">Bun venit!</div>
+      <div class="auth-sub">Introdu PIN-ul pentru a accesa contul.</div>
+    </div>
+    <div class="auth-body">
+      <div class="auth-card">
+        <div class="pin-display">
+          <div class="pin-dot" id="lp0"></div>
+          <div class="pin-dot" id="lp1"></div>
+          <div class="pin-dot" id="lp2"></div>
+          <div class="pin-dot" id="lp3"></div>
+        </div>
+        <div class="pin-pad">
+          <div class="pin-key" onclick="pinKey('login','1')">1</div>
+          <div class="pin-key" onclick="pinKey('login','2')">2</div>
+          <div class="pin-key" onclick="pinKey('login','3')">3</div>
+          <div class="pin-key" onclick="pinKey('login','4')">4</div>
+          <div class="pin-key" onclick="pinKey('login','5')">5</div>
+          <div class="pin-key" onclick="pinKey('login','6')">6</div>
+          <div class="pin-key" onclick="pinKey('login','7')">7</div>
+          <div class="pin-key" onclick="pinKey('login','8')">8</div>
+          <div class="pin-key" onclick="pinKey('login','9')">9</div>
+          <div class="pin-key empty"></div>
+          <div class="pin-key" onclick="pinKey('login','0')">0</div>
+          <div class="pin-key del" onclick="pinDel('login')">⌫</div>
+        </div>
+        <div style="text-align:center;margin-top:16px;">
+          <a onclick="showStep('step-forgot')" style="font-size:13px;color:var(--blue);cursor:pointer;">Am uitat PIN-ul</a>
+        </div>
+        <div class="msg" id="msg-login-pin"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 6: Reset PIN - email -->
+  <div id="step-forgot" style="display:none;flex-direction:column;min-height:100vh;">
+    <div class="auth-header">
+      <div class="auth-title">Resetare PIN</div>
+      <div class="auth-sub">Trimitem un cod pe emailul asociat contului tău.</div>
+    </div>
+    <div class="auth-body">
+      <div class="auth-card">
+        <div class="field">
+          <label class="field-label">Email</label>
+          <input type="email" class="input" id="inp-email-forgot" placeholder="email@exemplu.ro" />
+        </div>
+        <button class="btn btn-navy" onclick="sendResetCode()">Trimite codul</button>
+        <button class="btn btn-outline" onclick="showStep('step-login-pin')" style="margin-top:10px;">← Înapoi</button>
+        <div class="msg" id="msg-forgot"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 7: Reset PIN - cod + PIN nou -->
+  <div id="step-reset-pin" style="display:none;flex-direction:column;min-height:100vh;">
+    <div class="auth-header">
+      <div class="auth-title">PIN nou</div>
+      <div class="auth-sub">Introdu codul primit pe email.</div>
+    </div>
+    <div class="auth-body">
+      <div class="auth-card">
+        <div class="otp-row" style="margin-bottom:24px;">
+          <input type="text" class="otp-box" maxlength="1" inputmode="numeric" id="r0" oninput="otpNav(this,0,'r')" />
+          <input type="text" class="otp-box" maxlength="1" inputmode="numeric" id="r1" oninput="otpNav(this,1,'r')" />
+          <input type="text" class="otp-box" maxlength="1" inputmode="numeric" id="r2" oninput="otpNav(this,2,'r')" />
+          <input type="text" class="otp-box" maxlength="1" inputmode="numeric" id="r3" oninput="otpNav(this,3,'r')" />
+          <input type="text" class="otp-box" maxlength="1" inputmode="numeric" id="r4" oninput="otpNav(this,4,'r')" />
+          <input type="text" class="otp-box" maxlength="1" inputmode="numeric" id="r5" oninput="otpNav(this,5,'r')" />
+        </div>
+        <p style="font-size:13px;color:var(--text-sec);margin-bottom:16px;text-align:center;">Acum alege un PIN nou din 4 cifre</p>
+        <div class="pin-display">
+          <div class="pin-dot" id="rp0"></div>
+          <div class="pin-dot" id="rp1"></div>
+          <div class="pin-dot" id="rp2"></div>
+          <div class="pin-dot" id="rp3"></div>
+        </div>
+        <div class="pin-pad">
+          <div class="pin-key" onclick="pinKey('reset','1')">1</div>
+          <div class="pin-key" onclick="pinKey('reset','2')">2</div>
+          <div class="pin-key" onclick="pinKey('reset','3')">3</div>
+          <div class="pin-key" onclick="pinKey('reset','4')">4</div>
+          <div class="pin-key" onclick="pinKey('reset','5')">5</div>
+          <div class="pin-key" onclick="pinKey('reset','6')">6</div>
+          <div class="pin-key" onclick="pinKey('reset','7')">7</div>
+          <div class="pin-key" onclick="pinKey('reset','8')">8</div>
+          <div class="pin-key" onclick="pinKey('reset','9')">9</div>
+          <div class="pin-key empty"></div>
+          <div class="pin-key" onclick="pinKey('reset','0')">0</div>
+          <div class="pin-key del" onclick="pinDel('reset')">⌫</div>
+        </div>
+        <div class="msg" id="msg-reset-pin"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ===== APP PRINCIPAL ===== -->
+<div id="screen-app" style="display:none;min-height:100vh;flex-direction:column;background:var(--bg);">
+  <div class="app-topbar">
+    <div class="topbar-logo">HUEX<em>.</em></div>
+    <div class="topbar-avatar" id="app-avatar" onclick="switchTab('profil',null)">—</div>
+  </div>
+  <div class="qr-hero">
+    <div class="qr-hero-inner">
+      <div class="qr-card-wrap"><div id="qr-canvas"></div></div>
+      <div class="qr-name" id="qr-name">—</div>
+      <div class="qr-code" id="qr-code">—</div>
+    </div>
+  </div>
+  <div class="app-scroll" id="app-scroll">
+    <div class="loader"><div class="spinner"></div></div>
+  </div>
+  <div class="bottom-nav">
+    <div class="nav-item active" id="nav-puncte" onclick="switchTab('puncte',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/><path d="M12 8v8M8 12h8"/></svg>
+      Puncte
+    </div>
+    <div class="nav-item" id="nav-istoric" onclick="switchTab('istoric',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 1l4 4-4 4M3 11V9a4 4 0 0 1 4-4h14M7 23l-4-4 4-4M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+      Istoric
+    </div>
+    <div class="nav-item" id="nav-profil" onclick="switchTab('profil',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+      Profil
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PROMOTII -->
+<div class="modal-bg" id="promo-modal" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-ttl" id="promo-ttl">Promoții</div>
+    <div id="promo-content"></div>
+  </div>
+</div>
+
+<div id="banner"></div>
+
+<script>
+const pb = new PocketBase(window.location.origin);
+const NIVEL = {
+  silver:{label:'Silver',color:'#8A8578',bg:'#EFEDE8'},
+  gold:{label:'Gold',color:'#B8901F',bg:'#F7EFDA'},
+  platinum:{label:'Platinum',color:'#5B4C9A',bg:'#ECE9F5'},
+};
+
+let col = null;        // colaboratorul curent
+let regPhone = '';     // telefon la inregistrare
+let regEmail = '';     // email la inregistrare
+let regData = null;    // datele la inregistrare
+let pendingPin = '';   // PIN la setare (primul pas)
+let activeTab = 'puncte';
+let promoCache = [];
+
+// ===== UTILS =====
+function showStep(id){
+  document.querySelectorAll('[id^="step-"]').forEach(el=>el.style.display='none');
+  const el = document.getElementById(id);
+  if(el) el.style.display='flex';
+}
+
+function showMsg(id, text, type){
+  const el = document.getElementById(id);
+  if(!el) return;
+  el.textContent = text;
+  el.className = 'msg show ' + type;
+  setTimeout(()=>el.classList.remove('show'), 4000);
+}
+
+function showBanner(text, type){
+  const b = document.getElementById('banner');
+  b.textContent = text;
+  b.style.background = type==='ok'?'#16A34A':type==='err'?'#DC2626':'#FF6B35';
+  b.style.color = '#fff';
+  b.style.transform = 'translateY(0)';
+  setTimeout(()=>b.style.transform='translateY(-100%)', 3500);
+}
+
+// OTP navigation
+function otpNav(el, idx, prefix){
+  if(el.value && idx<5) document.getElementById(prefix+(idx+1)).focus();
+}
+
+function getOTP(prefix){
+  return [0,1,2,3,4,5].map(i=>(document.getElementById(prefix+i)||{value:''}).value).join('');
+}
+
+// PIN pad
+const pins = {set:'',confirm:'',login:'',reset:''};
+const pinPrefix = {set:'sp',confirm:'cp',login:'lp',reset:'rp'};
+
+function pinKey(mode, digit){
+  if(pins[mode].length >= 4) return;
+  pins[mode] += digit;
+  updatePinDisplay(mode);
+  if(pins[mode].length === 4) setTimeout(()=>pinComplete(mode), 200);
+}
+
+function pinDel(mode){
+  pins[mode] = pins[mode].slice(0,-1);
+  updatePinDisplay(mode);
+}
+
+function updatePinDisplay(mode){
+  const prefix = pinPrefix[mode];
+  for(let i=0;i<4;i++){
+    const dot = document.getElementById(prefix+i);
+    if(dot) dot.classList.toggle('filled', i < pins[mode].length);
+  }
+}
+
+async function pinComplete(mode){
+  if(mode==='set'){
+    pendingPin = pins[mode];
+    pins[mode] = '';
+    updatePinDisplay(mode);
+    showStep('step-confirm-pin');
+  } else if(mode==='confirm'){
+    if(pins[mode] === pendingPin){
+      await savePin(pins[mode]);
+    } else {
+      showMsg('msg-confirm-pin','PIN-urile nu coincid. Încearcă din nou.','err');
+      pins[mode] = ''; updatePinDisplay(mode);
+    }
+  } else if(mode==='login'){
+    await doLoginPin(pins[mode]);
+    pins[mode] = ''; updatePinDisplay(mode);
+  } else if(mode==='reset'){
+    const cod = getOTP('r');
+    if(cod.length<6){ showMsg('msg-reset-pin','Introdu mai întâi codul de 6 cifre.','err'); pins[mode]=''; updatePinDisplay(mode); return; }
+    await doResetPin(cod, pins[mode]);
+    pins[mode]=''; updatePinDisplay(mode);
+  }
+}
+
+// Metoda trimitere
+let selectedMethod = 'email';
+function selectMethod(m){
+  selectedMethod = m;
+  document.getElementById('method-email').classList.toggle('active', m==='email');
+  document.getElementById('method-sms').classList.toggle('active', m==='sms');
+  if(m==='sms') showBanner('SMS disponibil în curând. Folosește email.','err');
+}
+
+// ===== AUTH FLOW =====
+async function checkPhone(){
+  const phone = document.getElementById('inp-phone').value.trim();
+  if(!phone){ showMsg('msg-phone','Introdu numărul de telefon.','err'); return; }
+  regPhone = phone;
+  try{
+    const existing = await pb.collection('colaboratori').getFirstListItem(`telefon="${phone}"`);
+    col = existing;
+    document.getElementById('login-name').textContent = 'Bun venit, ' + existing.nume.split(' ')[0] + '!';
+    showStep('step-login-pin');
+  }catch(e){
+    // Cont nou
+    showStep('step-register');
+  }
+}
+
+async function doRegister(){
+  const prenume = document.getElementById('inp-prenume').value.trim();
+  const nume = document.getElementById('inp-nume').value.trim();
+  const email = document.getElementById('inp-email-reg').value.trim();
+  if(!prenume||!nume||!email){ showMsg('msg-register','Completează toate câmpurile.','err'); return; }
+  regEmail = email;
+  regData = { nume: prenume+' '+nume, telefon: regPhone, email };
+
+  // Trimite OTP pe email
+  const cod = String(Math.floor(100000+Math.random()*900000));
+  const expires = new Date(Date.now()+10*60*1000).toISOString();
+  try{
+    const vechi = await pb.collection('otp_sessions').getFullList({filter:`telefon="${regPhone}"`}).catch(()=>[]);
+    for(const v of vechi) await pb.collection('otp_sessions').delete(v.id).catch(()=>{});
+    await pb.collection('otp_sessions').create({telefon:regPhone, cod, expires_at:expires});
+    await fetch('/push/send-otp-email',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,cod,nume:prenume})});
+    document.getElementById('verify-sub').textContent = `Am trimis codul la ${email}`;
+    showStep('step-verify');
+    document.getElementById('v0').focus();
+  }catch(e){
+    showMsg('msg-register','Eroare la trimiterea codului. Încearcă din nou.','err');
+  }
+}
+
+async function verifyCode(){
+  const cod = getOTP('v');
+  if(cod.length<6){ showMsg('msg-verify','Introdu toate cele 6 cifre.','err'); return; }
+  try{
+    const session = await pb.collection('otp_sessions').getFirstListItem(`telefon="${regPhone}" && cod="${cod}"`);
+    if(new Date(session.expires_at)<new Date()){ showMsg('msg-verify','Codul a expirat. Solicită unul nou.','err'); return; }
+    await pb.collection('otp_sessions').delete(session.id).catch(()=>{});
+    // Creeaza cont
+    const cod_qr = 'MST-'+Math.random().toString(36).substr(2,6).toUpperCase();
+    col = await pb.collection('colaboratori').create({...regData, cod_qr});
+    localStorage.setItem('huex_col',JSON.stringify(col));
+    // Email bun venit
+    await fetch('/push/send-welcome-email',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:regData.email,nume:regData.nume.split(' ')[0]})}).catch(()=>{});
+    showStep('step-set-pin');
+  }catch(e){
+    showMsg('msg-verify','Cod incorect. Verifică și încearcă din nou.','err');
+  }
+}
+
+async function resendCode(){
+  if(!regPhone||!regEmail){ showBanner('Date lipsă.','err'); return; }
+  const cod = String(Math.floor(100000+Math.random()*900000));
+  const expires = new Date(Date.now()+10*60*1000).toISOString();
+  const vechi = await pb.collection('otp_sessions').getFullList({filter:`telefon="${regPhone}"`}).catch(()=>[]);
+  for(const v of vechi) await pb.collection('otp_sessions').delete(v.id).catch(()=>{});
+  await pb.collection('otp_sessions').create({telefon:regPhone,cod,expires_at:expires});
+  await fetch('/push/send-otp-email',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:regEmail,cod,nume:''})});
+  showBanner('Cod retrimis pe email!','ok');
+}
+
+async function savePin(pin){
+  try{
+    await pb.collection('colaboratori').update(col.id,{pin_hash:btoa(pin)});
+    col.pin_hash = btoa(pin);
+    localStorage.setItem('huex_col',JSON.stringify(col));
+    await bootApp();
+  }catch(e){
+    showMsg('msg-confirm-pin','Eroare la salvarea PIN-ului.','err');
+  }
+}
+
+async function doLoginPin(pin){
+  if(!col){ showMsg('msg-login-pin','Eroare. Reîncearcă.','err'); return; }
+  if(col.pin_hash !== btoa(pin)){
+    showMsg('msg-login-pin','PIN incorect.','err'); return;
+  }
+  localStorage.setItem('huex_col',JSON.stringify(col));
+  await bootApp();
+}
+
+async function sendResetCode(){
+  const email = document.getElementById('inp-email-forgot').value.trim();
+  if(!email){ showMsg('msg-forgot','Introdu emailul.','err'); return; }
+  try{
+    const found = await pb.collection('colaboratori').getFirstListItem(`email="${email}"`);
+    col = found;
+    const cod = String(Math.floor(100000+Math.random()*900000));
+    const expires = new Date(Date.now()+10*60*1000).toISOString();
+    const vechi = await pb.collection('otp_sessions').getFullList({filter:`telefon="${found.telefon}"`}).catch(()=>[]);
+    for(const v of vechi) await pb.collection('otp_sessions').delete(v.id).catch(()=>{});
+    await pb.collection('otp_sessions').create({telefon:found.telefon,cod,expires_at:expires});
+    await fetch('/push/send-otp-email',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,cod,nume:found.nume.split(' ')[0]})});
+    showStep('step-reset-pin');
+    document.getElementById('r0').focus();
+  }catch(e){
+    showMsg('msg-forgot','Email negăsit în sistem.','err');
+  }
+}
+
+async function doResetPin(cod, pin){
+  try{
+    const session = await pb.collection('otp_sessions').getFirstListItem(`telefon="${col.telefon}" && cod="${cod}"`);
+    if(new Date(session.expires_at)<new Date()){ showMsg('msg-reset-pin','Codul a expirat.','err'); return; }
+    await pb.collection('otp_sessions').delete(session.id).catch(()=>{});
+    await pb.collection('colaboratori').update(col.id,{pin_hash:btoa(pin)});
+    col.pin_hash = btoa(pin);
+    localStorage.setItem('huex_col',JSON.stringify(col));
+    showBanner('PIN schimbat cu succes!','ok');
+    await bootApp();
+  }catch(e){
+    showMsg('msg-reset-pin','Cod incorect sau expirat.','err');
+  }
+}
+
+// ===== APP =====
+async function bootApp(){
+  document.getElementById('screen-auth').style.display = 'none';
+  document.getElementById('screen-app').style.display = 'flex';
+  const init = col.nume.split(' ').map(p=>p[0]||'').slice(0,2).join('').toUpperCase();
+  document.getElementById('app-avatar').textContent = init;
+  document.getElementById('qr-name').textContent = col.nume;
+  document.getElementById('qr-code').textContent = col.cod_qr;
+  const qrDiv = document.getElementById('qr-canvas');
+  qrDiv.innerHTML='';
+  new QRCode(qrDiv,{text:col.cod_qr,width:140,height:140,colorDark:'#0D1B2A',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M});
+  await loadContent();
+  setTimeout(initPush,2000);
+  setInterval(checkPending,30000);
+  setTimeout(checkPending,1000);
+}
+
+async function loadContent(){
+  const el = document.getElementById('app-scroll');
+  el.innerHTML='<div class="loader"><div class="spinner"></div></div>';
+  const [conturi,promos,txns] = await Promise.all([
+    pb.collection('conturi_puncte').getFullList({filter:`colaborator="${col.id}"`,expand:'magazin',sort:'-cumulat'}),
+    pb.collection('promotii').getFullList({filter:'activa=true'}).catch(()=>[]),
+    pb.collection('tranzactii').getFullList({filter:`colaborator="${col.id}"`,expand:'magazin',sort:'-created'}).catch(()=>[]),
+  ]);
+  promoCache = promos;
+  const azi = new Date();
+  const activeProm = promos.filter(p=>new Date(p.data_end)>=azi);
+
+  const puncteHtml = `
+    <div id="confirm-zone"></div>
+    <div class="section-head">Punctele mele</div>
+    ${conturi.length ? conturi.map(c=>{
+      const mag=c.expand?.magazin;
+      const niv=NIVEL[c.nivel]||NIVEL.silver;
+      const promMag=activeProm.filter(p=>p.magazin===mag?.id);
+      const areProm=promMag.length>0;
+      const magId=(mag?.id||'').replace(/'/g,'');
+      const magNume=(mag?.nume||'').replace(/'/g,'\\x27');
+      return `<div class="store-card" onclick="${areProm?`showPromo('${magId}','${magNume}')`:''}" style="${areProm?'':'cursor:default;'}">
+        <div class="store-icon">${(mag?.nume||'?').charAt(0)}</div>
+        <div class="store-info">
+          <div class="store-name">${mag?.nume||'—'} ${areProm?'<span style="background:#FF6B35;color:#fff;font-size:9px;font-weight:800;padding:2px 6px;border-radius:999px;margin-left:4px;">PROMO</span>':''}</div>
+          <div class="store-type">${mag?.tip||'Partener HUEX'}</div>
+          <span class="store-badge" style="background:${niv.bg};color:${niv.color};">${niv.label}</span>
+        </div>
+        <div class="store-right">
+          <div class="store-pts">${Number(c.sold||0).toLocaleString('ro-RO')}</div>
+          <div class="store-pts-label">puncte</div>
+          ${areProm?`<div class="promo-tag">${promMag.length} promoții →</div>`:''}
+        </div>
+      </div>`;
+    }).join('') : '<div class="empty-state"><p>Nu ai puncte la niciun magazin partener.</p></div>'}`;
+
+  const istoricHtml = `
+    <div class="section-head">Istoric tranzacții</div>
+    ${txns.length ? txns.slice(0,30).map(t=>{
+      const mag=t.expand?.magazin;
+      const plus=t.tip==='emitere';
+      const data=new Date(t.created).toLocaleDateString('ro-RO',{day:'2-digit',month:'short',year:'numeric'});
+      const status={pending:'În așteptare',confirmata:'Confirmat',anulata:'Anulat'}[t.status]||t.status;
+      return `<div class="tx-card">
+        <div><div class="tx-store">${mag?.nume||'—'}</div><div class="tx-date">${data} · ${status}</div></div>
+        <div style="text-align:right;"><div class="tx-amt" style="color:${plus?'#16A34A':'#DC2626'};">${plus?'+':'-'}${t.puncte} pct</div><div class="tx-status">${Number(t.valoare_neta||0).toLocaleString('ro-RO')} RON</div></div>
+      </div>`;
+    }).join('') : '<div class="empty-state"><p>Nicio tranzacție înregistrată.</p></div>'}`;
+
+  const profilHtml = `
+    <div class="profil-block">
+      <div class="profil-avatar">${col.nume.split(' ').map(p=>p[0]||'').slice(0,2).join('').toUpperCase()}</div>
+      <div class="profil-name">${col.nume}</div>
+      <div class="profil-detail">${col.telefon}${col.email?' · '+col.email:''}</div>
+    </div>
+    <div class="profil-block">
+      <div class="profil-row"><div class="profil-row-lbl">Cod QR</div><div class="profil-row-val">${col.cod_qr}</div></div>
+      <div class="profil-row"><div class="profil-row-lbl">Schimbă PIN-ul</div><a onclick="changePIN()" style="font-size:13px;color:var(--blue);cursor:pointer;">Schimbă</a></div>
+    </div>
+    <button class="btn-red" onclick="doLogout()">Ieșire din cont</button>`;
+
+  el.innerHTML = `
+    <div class="tab-panel active" id="tab-puncte">${puncteHtml}</div>
+    <div class="tab-panel" id="tab-istoric">${istoricHtml}</div>
+    <div class="tab-panel" id="tab-profil">${profilHtml}</div>`;
+
+  switchTab(activeTab, null, true);
+  checkPending();
+}
+
+function switchTab(tab, el, silent){
+  activeTab = tab;
+  document.querySelectorAll('.tab-panel').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(t=>t.classList.remove('active'));
+  const panel = document.getElementById('tab-'+tab);
+  if(panel) panel.classList.add('active');
+  const nav = document.getElementById('nav-'+tab);
+  if(nav) nav.classList.add('active');
+}
+
+// ===== CONFIRMARE TRANZACTIE =====
+async function checkPending(){
+  if(!col) return;
+  try{
+    const r = await fetch('/push/pending/'+col.id);
+    const data = await r.json();
+    const zone = document.getElementById('confirm-zone');
+    if(!zone) return;
+    if(!data.items||!data.items.length){ zone.innerHTML=''; return; }
+    zone.innerHTML = data.items.map(txn=>`
+      <div class="confirmare-card">
+        <div class="confirmare-head">⚡ Confirmare plată cu puncte</div>
+        <div class="confirmare-mag">${txn.magazinNume}</div>
+        <div class="confirmare-info">Solicitare: <strong>${txn.puncte} puncte</strong> = ${txn.valoare} RON reducere</div>
+        <div class="confirmare-btns">
+          <button class="btn-confirm" onclick="raspunde('${txn.txnId}','confirmat')">✓ Confirmă</button>
+          <button class="btn-refuse" onclick="raspunde('${txn.txnId}','refuzat')">✕ Refuză</button>
+        </div>
+      </div>`).join('');
+    if(activeTab!=='puncte') switchTab('puncte');
+  }catch(e){}
+}
+
+async function raspunde(txnId, decizie){
+  try{
+    const r = await fetch('/push/confirma-txn',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({txnId,decizie,colaboratorId:col.id})});
+    const d = await r.json();
+    if(d.ok){
+      showBanner(decizie==='confirmat'?'✓ Plată confirmată!':'Plată refuzată.',decizie==='confirmat'?'ok':'err');
+      await loadContent();
+    }
+  }catch(e){ showBanner('Eroare la procesare.','err'); }
+}
+
+// ===== PROMOTII =====
+function showPromo(magId, magNume){
+  const azi = new Date();
+  const list = promoCache.filter(p=>p.magazin===magId&&p.activa&&new Date(p.data_end)>=azi);
+  document.getElementById('promo-ttl').textContent = magNume+' — Promoții';
+  document.getElementById('promo-content').innerHTML = list.map(p=>{
+    const imgHtml = p.imagine?`<img class="promo-img" src="${pb.files.getUrl(p,p.imagine)}" />`:'';
+    const end = new Date(p.data_end).toLocaleDateString('ro-RO',{day:'2-digit',month:'short',year:'numeric'});
+    return `<div class="promo-item">${imgHtml}<div class="promo-body"><div class="promo-name">${p.titlu}</div>${p.descriere?`<div class="promo-desc">${p.descriere}</div>`:''}<div class="promo-foot"><span class="promo-mult">x${p.multiplicator} puncte</span><span class="promo-dates">până pe ${end}</span></div></div></div>`;
+  }).join('')||'<div class="empty-state"><p>Nicio promoție activă.</p></div>';
+  document.getElementById('promo-modal').classList.add('open');
+}
+
+// ===== CHANGE PIN =====
+function changePIN(){
+  pendingPin = '';
+  pins.set='';
+  updatePinDisplay('set');
+  document.getElementById('screen-app').style.display='none';
+  document.getElementById('screen-auth').style.display='flex';
+  showStep('step-set-pin');
+}
+
+// ===== PUSH =====
+async function initPush(){
+  if(!('serviceWorker' in navigator)||!('PushManager' in window)) return;
+  try{
+    const reg = await navigator.serviceWorker.ready;
+    const ex = await reg.pushManager.getSubscription();
+    if(ex){ regSub(ex); return; }
+    const perm = await Notification.requestPermission();
+    if(perm!=='granted') return;
+    const resp = await fetch('/push/vapid-public');
+    const {publicKey} = await resp.json();
+    const sub = await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64ToUint8(publicKey)});
+    regSub(sub);
+  }catch(e){}
+}
+async function regSub(sub){
+  if(!col) return;
+  await fetch('/push/subscribe',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({colaboratorId:col.id,subscription:sub.toJSON()})}).catch(()=>{});
+}
+function b64ToUint8(b64){
+  const pad='='.repeat((4-b64.length%4)%4);
+  const base64=(b64+pad).replace(/-/g,'+').replace(/_/g,'/');
+  const raw=atob(base64);
+  return Uint8Array.from(raw,c=>c.charCodeAt(0));
+}
+
+// ===== LOGOUT =====
+function doLogout(){
+  col=null;
+  localStorage.removeItem('huex_col');
+  document.getElementById('screen-app').style.display='none';
+  document.getElementById('screen-auth').style.display='flex';
+  document.getElementById('inp-phone').value='';
+  showStep('step-phone');
+}
+
+// ===== INIT =====
+(async function init(){
+  const saved = localStorage.getItem('huex_col');
+  if(saved){
+    try{
+      const parsed = JSON.parse(saved);
+      col = await pb.collection('colaboratori').getOne(parsed.id);
+      if(col.pin_hash){
+        document.getElementById('login-name').textContent='Bun venit, '+col.nume.split(' ')[0]+'!';
+        showStep('step-login-pin');
+        document.getElementById('screen-auth').style.display='flex';
+      } else {
+        await bootApp();
+      }
+    }catch(e){
+      localStorage.removeItem('huex_col');
+    }
+  }
+})();
+</script>
+
+<script>
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('/client/sw.js').catch(()=>{});
+}
+</script>
+</body>
+</html>
