@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<meta name="theme-color" content="#132239" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="HUEX" />
+<title>HUEX — Card Fidelitate</title>
+<link rel="manifest" href="/client/manifest.json" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/pocketbase@0.21.1/dist/pocketbase.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+:root{
+  --navy:#132239;--navy-light:#1E3352;
+  --bg:#F5F4F1;--surface:#FFFFFF;
+  --border:#E7E4DD;--text:#1C1B18;--text-sec:#767167;
+  --blue:#3B9FE3;--blue-deep:#1E7BC0;
+  --green:#3E8B5C;--green-bg:#EAF4EE;
+  --red:#C1503D;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+body{margin:0;font-family:'Inter',sans-serif;background:var(--navy);color:#fff;min-height:100vh;min-height:100dvh;overflow-x:hidden;}
+
+/* ===== AUTH SCREENS ===== */
+.auth-screen{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;background:var(--navy);}
+.auth-logo{height:36px;width:auto;margin-bottom:32px;}
+.auth-card{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:28px 24px;width:100%;max-width:360px;}
+.auth-title{font-size:20px;font-weight:700;margin:0 0 4px;}
+.auth-sub{font-size:13px;color:rgba(255,255,255,0.5);margin:0 0 24px;}
+.field-label{font-size:12px;color:rgba(255,255,255,0.5);display:block;margin-bottom:6px;letter-spacing:0.04em;text-transform:uppercase;}
+.input{width:100%;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:13px 14px;font-size:16px;color:#fff;font-family:inherit;outline:none;transition:border 0.2s;margin-bottom:12px;}
+.input:focus{border-color:var(--blue);}
+.input::placeholder{color:rgba(255,255,255,0.3);}
+.btn{width:100%;border:none;border-radius:12px;padding:14px;font-size:15px;font-weight:600;cursor:pointer;transition:all 0.2s;font-family:inherit;margin-top:4px;}
+.btn-primary{background:var(--blue);color:#fff;}
+.btn-primary:hover{background:var(--blue-deep);}
+.btn-ghost{background:rgba(255,255,255,0.08);color:#fff;}
+.btn-ghost:hover{background:rgba(255,255,255,0.14);}
+.btn-google{background:#fff;color:#1C1B18;display:flex;align-items:center;justify-content:center;gap:10px;margin-top:8px;}
+.btn-google img{width:18px;height:18px;}
+.divider{display:flex;align-items:center;gap:12px;margin:16px 0;}
+.divider span{font-size:12px;color:rgba(255,255,255,0.3);}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:rgba(255,255,255,0.1);}
+.msg{font-size:13px;text-align:center;margin-top:8px;min-height:18px;}
+.msg.ok{color:#6DD9A0;}
+.msg.err{color:#F08080;}
+.auth-link{font-size:13px;color:rgba(255,255,255,0.5);text-align:center;margin-top:16px;}
+.auth-link a{color:var(--blue);cursor:pointer;text-decoration:none;}
+.otp-inputs{display:flex;gap:8px;justify-content:center;margin-bottom:12px;}
+.otp-input{width:44px;height:52px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:10px;font-size:22px;font-weight:700;color:#fff;text-align:center;font-family:'IBM Plex Mono',monospace;outline:none;transition:border 0.2s;}
+.otp-input:focus{border-color:var(--blue);}
+.password-wrap{position:relative;}
+.password-wrap .input{margin-bottom:0;padding-right:44px;}
+.eye-btn{position:absolute;right:14px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.4);padding:4px;}
+
+/* ===== APP ===== */
+#screen-app{display:none;min-height:100vh;min-height:100dvh;flex-direction:column;background:var(--bg);}
+.app-header{background:var(--navy);padding:16px 20px 20px;display:flex;align-items:center;justify-content:space-between;}
+.app-header img{height:24px;filter:invert(1);}
+.avatar{width:34px;height:34px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;cursor:pointer;}
+.qr-section{background:var(--navy);padding:0 20px 28px;display:flex;flex-direction:column;align-items:center;}
+.qr-card{background:#fff;border-radius:20px;padding:20px;width:200px;height:200px;display:flex;align-items:center;justify-content:center;}
+.qr-label{margin-top:12px;font-size:12px;color:rgba(255,255,255,0.5);letter-spacing:0.06em;text-transform:uppercase;}
+.qr-code-text{font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:600;color:#fff;margin-top:4px;letter-spacing:0.1em;}
+.app-content{flex:1;padding:20px;overflow-y:auto;}
+.section-title{font-size:11px;color:var(--text-sec);letter-spacing:0.08em;text-transform:uppercase;margin:0 0 12px;font-weight:600;}
+.mag-list{display:flex;flex-direction:column;gap:12px;margin-bottom:24px;}
+.mag-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;display:flex;align-items:center;gap:14px;cursor:pointer;transition:border-color 0.2s;}
+.mag-card:hover{border-color:var(--blue);}
+.mag-icon{width:42px;height:42px;border-radius:10px;background:var(--navy);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px;font-weight:700;color:#fff;}
+.mag-info{flex:1;min-width:0;}
+.mag-name{font-size:14px;font-weight:600;color:var(--text);}
+.mag-type{font-size:12px;color:var(--text-sec);}
+.mag-right{text-align:right;flex-shrink:0;}
+.mag-puncte{font-family:'IBM Plex Mono',monospace;font-size:18px;font-weight:600;color:var(--text);}
+.mag-puncte-label{font-size:11px;color:var(--text-sec);}
+.nivel-badge{display:inline-flex;align-items:center;border-radius:999px;padding:2px 8px;font-size:10px;font-weight:700;margin-top:4px;}
+.tx-list{display:flex;flex-direction:column;gap:8px;}
+.tx-item{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;}
+.tx-left{display:flex;flex-direction:column;gap:2px;}
+.tx-mag{font-size:13px;font-weight:600;color:var(--text);}
+.tx-date{font-size:11px;color:var(--text-sec);}
+.tx-right{text-align:right;}
+.tx-pts{font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:600;}
+.tx-status{font-size:10px;color:var(--text-sec);}
+.empty{text-align:center;padding:32px 20px;color:var(--text-sec);}
+.empty p{font-size:13px;margin:0;}
+.bottom-nav{background:var(--surface);border-top:1px solid var(--border);display:flex;padding:8px 0 calc(8px + env(safe-area-inset-bottom));}
+.nav-tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 4px;cursor:pointer;color:var(--text-sec);font-size:10px;font-weight:500;}
+.nav-tab.active{color:var(--blue);}
+.nav-tab svg{width:22px;height:22px;}
+.tab-content{display:none;}
+.tab-content.active{display:block;}
+.loader{display:flex;align-items:center;justify-content:center;padding:40px;}
+.spinner{width:28px;height:28px;border:3px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:spin 0.8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* ===== MODAL ===== */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:1000;display:none;align-items:flex-end;justify-content:center;}
+.modal-overlay.open{display:flex;}
+.modal-box{background:#fff;border-radius:20px 20px 0 0;width:100%;max-width:500px;max-height:85vh;overflow-y:auto;padding:24px 20px 40px;}
+.modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;}
+.modal-title{font-size:17px;font-weight:700;color:var(--text);}
+.modal-close{background:var(--bg);border:none;border-radius:50%;width:32px;height:32px;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;}
+.promo-card{border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:12px;}
+.promo-img{width:100%;height:140px;object-fit:cover;}
+.promo-body{padding:14px;}
+.promo-title{font-size:15px;font-weight:700;margin-bottom:4px;color:var(--text);}
+.promo-desc{font-size:13px;color:var(--text-sec);margin-bottom:8px;}
+.promo-footer{display:flex;align-items:center;justify-content:space-between;}
+.promo-mult{background:#FF6B35;color:#fff;font-size:11px;font-weight:800;padding:3px 10px;border-radius:999px;}
+.promo-date{font-size:11px;color:var(--text-sec);}
+
+/* ===== CONFIRMARE TRANZACTIE ===== */
+.confirmare-banner{background:#fff;border:2px solid var(--blue);border-radius:16px;padding:20px;margin-bottom:16px;animation:pulse-border 2s infinite;}
+@keyframes pulse-border{0%,100%{border-color:var(--blue);}50%{border-color:#60B8F5;}}
+.confirmare-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px;}
+.confirmare-info{font-size:13px;color:var(--text-sec);margin-bottom:16px;}
+.confirmare-btns{display:flex;gap:10px;}
+.btn-confirma{flex:1;background:var(--green);color:#fff;border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;}
+.btn-refuza{flex:1;background:#FEE;color:var(--red);border:1.5px solid var(--red);border-radius:10px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;background:transparent;}
+
+/* ===== PROFIL ===== */
+.profil-section{padding:20px;}
+.profil-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px;margin-bottom:16px;}
+.profil-avatar-big{width:64px;height:64px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;color:#fff;margin:0 auto 12px;}
+.profil-name{font-size:18px;font-weight:700;color:var(--text);text-align:center;}
+.profil-tel{font-size:13px;color:var(--text-sec);text-align:center;margin-top:4px;}
+.profil-email{font-size:13px;color:var(--text-sec);text-align:center;margin-top:2px;}
+.profil-row{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--border);}
+.profil-row:last-child{border-bottom:none;}
+.profil-row-label{font-size:14px;color:var(--text);}
+.profil-row-val{font-size:13px;color:var(--text-sec);}
+.toggle{width:44px;height:24px;background:var(--border);border-radius:999px;position:relative;cursor:pointer;transition:background 0.2s;}
+.toggle.on{background:var(--blue);}
+.toggle::after{content:'';position:absolute;width:20px;height:20px;background:#fff;border-radius:50%;top:2px;left:2px;transition:transform 0.2s;box-shadow:0 1px 4px rgba(0,0,0,0.2);}
+.toggle.on::after{transform:translateX(20px);}
+.btn-logout{width:100%;background:transparent;border:1.5px solid var(--red);color:var(--red);border-radius:12px;padding:13px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;margin-top:8px;}
+
+/* ===== BANNER ===== */
+#inapp-banner{position:fixed;top:0;left:0;right:0;z-index:9999;padding:14px 20px;font-size:14px;font-weight:600;text-align:center;transform:translateY(-100%);transition:transform 0.3s;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.6;}}
+</style>
+</head>
+<body>
+
+<!-- SCREEN: INREGISTRARE / LOGIN -->
+<div id="screen-auth" class="auth-screen">
+  <img src="/logo-login.png" alt="HUEX" class="auth-logo" style="filter:invert(1);" />
+
+  <!-- STEP 1: Alege telefon sau email -->
+  <div class="auth-card" id="step-start">
+    <div class="auth-title">Bun venit!</div>
+    <div class="auth-sub">Intră în contul tău sau creează unul nou.</div>
+    <label class="field-label">Număr de telefon</label>
+    <input type="tel" class="input" id="inp-tel-start" placeholder="07xx xxx xxx" inputmode="tel" />
+    <button class="btn btn-primary" onclick="checkTelefon()">Continuă</button>
+    <div class="divider"><span>sau</span></div>
+    <div id="google-btn-container"></div>
+    <div class="msg" id="msg-start"></div>
+  </div>
+
+  <!-- STEP 2a: LOGIN cu parola -->
+  <div class="auth-card" id="step-login" style="display:none;">
+    <div class="auth-title">Bun venit înapoi!</div>
+    <div class="auth-sub" id="login-sub">Introdu parola pentru contul tău.</div>
+    <label class="field-label">Parolă</label>
+    <div class="password-wrap" style="margin-bottom:12px;">
+      <input type="password" class="input" id="inp-parola-login" placeholder="Parola ta" />
+      <button class="eye-btn" onclick="togglePass('inp-parola-login')">👁</button>
+    </div>
+    <button class="btn btn-primary" onclick="doLogin()">Intră în cont</button>
+    <button class="btn btn-ghost" onclick="showStep('step-start')" style="margin-top:8px;">← Înapoi</button>
+    <div class="auth-link"><a onclick="showStep('step-forgot')">Am uitat parola</a></div>
+    <div class="msg" id="msg-login"></div>
+  </div>
+
+  <!-- STEP 2b: INREGISTRARE -->
+  <div class="auth-card" id="step-register" style="display:none;">
+    <div class="auth-title">Cont nou</div>
+    <div class="auth-sub">Completează datele pentru a crea contul tău HUEX.</div>
+    <label class="field-label">Nume complet</label>
+    <input type="text" class="input" id="inp-nume-reg" placeholder="Ion Popescu" />
+    <label class="field-label">Email</label>
+    <input type="email" class="input" id="inp-email-reg" placeholder="email@exemplu.ro" />
+    <label class="field-label">Parolă</label>
+    <div class="password-wrap" style="margin-bottom:12px;">
+      <input type="password" class="input" id="inp-parola-reg" placeholder="Minim 8 caractere" />
+      <button class="eye-btn" onclick="togglePass('inp-parola-reg')">👁</button>
+    </div>
+    <label class="field-label">Confirmare parolă</label>
+    <div class="password-wrap" style="margin-bottom:12px;">
+      <input type="password" class="input" id="inp-parola-reg2" placeholder="Repetă parola" />
+      <button class="eye-btn" onclick="togglePass('inp-parola-reg2')">👁</button>
+    </div>
+    <button class="btn btn-primary" onclick="doRegister()">Creează cont</button>
+    <button class="btn btn-ghost" onclick="showStep('step-start')" style="margin-top:8px;">← Înapoi</button>
+    <div class="msg" id="msg-register"></div>
+  </div>
+
+  <!-- STEP 3: Verificare email OTP -->
+  <div class="auth-card" id="step-verify-email" style="display:none;">
+    <div class="auth-title">Verificare email</div>
+    <div class="auth-sub" id="verify-email-sub">Am trimis un cod de 6 cifre la adresa ta de email.</div>
+    <div class="otp-inputs">
+      <input type="text" class="otp-input" maxlength="1" inputmode="numeric" oninput="otpNext(this,0)" id="otp0" />
+      <input type="text" class="otp-input" maxlength="1" inputmode="numeric" oninput="otpNext(this,1)" id="otp1" />
+      <input type="text" class="otp-input" maxlength="1" inputmode="numeric" oninput="otpNext(this,2)" id="otp2" />
+      <input type="text" class="otp-input" maxlength="1" inputmode="numeric" oninput="otpNext(this,3)" id="otp3" />
+      <input type="text" class="otp-input" maxlength="1" inputmode="numeric" oninput="otpNext(this,4)" id="otp4" />
+      <input type="text" class="otp-input" maxlength="1" inputmode="numeric" oninput="otpNext(this,5)" id="otp5" />
+    </div>
+    <button class="btn btn-primary" onclick="verifyEmailOTP()">Verifică</button>
+    <button class="btn btn-ghost" onclick="resendOTP()" style="margin-top:8px;">Retrimite codul</button>
+    <div class="msg" id="msg-verify"></div>
+  </div>
+
+  <!-- STEP 4: Parola uitata -->
+  <div class="auth-card" id="step-forgot" style="display:none;">
+    <div class="auth-title">Resetare parolă</div>
+    <div class="auth-sub">Introdu emailul contului tău și îți trimitem un cod de resetare.</div>
+    <label class="field-label">Email</label>
+    <input type="email" class="input" id="inp-email-forgot" placeholder="email@exemplu.ro" />
+    <button class="btn btn-primary" onclick="sendForgotOTP()">Trimite cod</button>
+    <button class="btn btn-ghost" onclick="showStep('step-login')" style="margin-top:8px;">← Înapoi</button>
+    <div class="msg" id="msg-forgot"></div>
+  </div>
+
+  <!-- STEP 5: Reset parola - cod + parola noua -->
+  <div class="auth-card" id="step-reset" style="display:none;">
+    <div class="auth-title">Parolă nouă</div>
+    <div class="auth-sub">Introdu codul primit pe email și noua parolă.</div>
+    <div class="otp-inputs" style="margin-bottom:16px;">
+      <input type="text" class="otp-input" maxlength="1" inputmode="numeric" oninput="otpNext(this,0,'r')" id="rotp0" />
+      <input type="text" class="otp-input" maxlength="1" inputmode="numeric" oninput="otpNext(this,1,'r')" id="rotp1" />
+      <input type="text" class="otp-input" maxlength="1" inputmode="numeric" oninput="otpNext(this,2,'r')" id="rotp2" />
+      <input type="text" class="otp-input" maxlength="1" inputmode="numeric" oninput="otpNext(this,3,'r')" id="rotp3" />
+      <input type="text" class="otp-input" maxlength="1" inputmode="numeric" oninput="otpNext(this,4,'r')" id="rotp4" />
+      <input type="text" class="otp-input" maxlength="1" inputmode="numeric" oninput="otpNext(this,5,'r')" id="rotp5" />
+    </div>
+    <label class="field-label">Parolă nouă</label>
+    <div class="password-wrap" style="margin-bottom:12px;">
+      <input type="password" class="input" id="inp-parola-new" placeholder="Minim 8 caractere" />
+      <button class="eye-btn" onclick="togglePass('inp-parola-new')">👁</button>
+    </div>
+    <button class="btn btn-primary" onclick="doResetParola()">Schimbă parola</button>
+    <div class="msg" id="msg-reset"></div>
+  </div>
+
+</div>
+
+<!-- SCREEN: APP PRINCIPAL -->
+<div id="screen-app">
+  <div class="app-header">
+    <img src="/logo-login.png" alt="HUEX" />
+    <div class="header-right" style="display:flex;align-items:center;gap:12px;">
+      <div class="avatar" id="app-avatar" onclick="switchTab('profil', document.querySelectorAll('.nav-tab')[2])">—</div>
+    </div>
+  </div>
+  <div class="qr-section">
+    <div class="qr-card"><div id="qr-canvas" style="line-height:0;"></div></div>
+    <div class="qr-label">Codul tău de fidelitate</div>
+    <div class="qr-code-text" id="qr-cod-text">—</div>
+  </div>
+  <div class="app-content" id="app-content">
+    <div class="loader"><div class="spinner"></div></div>
+  </div>
+  <div class="bottom-nav">
+    <div class="nav-tab active" onclick="switchTab('puncte',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/><path d="M12 8v8M8 12h8"/></svg>
+      Puncte
+    </div>
+    <div class="nav-tab" onclick="switchTab('tranzactii',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+      Istoric
+    </div>
+    <div class="nav-tab" onclick="switchTab('profil',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+      Profil
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PROMOTII -->
+<div class="modal-overlay" id="promo-modal" onclick="closeModal(event)">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-title">Promoții</div>
+      <button class="modal-close" onclick="document.getElementById('promo-modal').classList.remove('open')">✕</button>
+    </div>
+    <div id="modal-content"></div>
+  </div>
+</div>
+
+<div id="inapp-banner"></div>
+
+<script>
+const pb = new PocketBase(window.location.origin);
+const GOOGLE_CLIENT_ID = '626239479286-ofo3hvo5lo8h8mfborubdr6ou93vsg9i.apps.googleusercontent.com';
+
+const NIVEL = {
+  silver:   { label:'Silver',   color:'#8A8578', bg:'#EFEDE8' },
+  gold:     { label:'Gold',     color:'#B8901F', bg:'#F7EFDA' },
+  platinum: { label:'Platinum', color:'#5B4C9A', bg:'#ECE9F5' },
+};
+
+let currentColaborator = null;
+let currentTelefon = null;
+let currentEmail = null;
+let pendingRegData = null;
+let pendingOTPCod = null;
+let pendingForgotEmail = null;
+let activeTab = 'puncte';
+let _promotiiCache = [];
+
+// ===== UTILS =====
+function showStep(id) {
+  document.querySelectorAll('.auth-card').forEach(c => c.style.display = 'none');
+  document.getElementById(id).style.display = 'block';
+}
+
+function togglePass(id) {
+  const inp = document.getElementById(id);
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+}
+
+function otpNext(el, idx, prefix='') {
+  const p = prefix;
+  if (el.value && idx < 5) document.getElementById(p+'otp'+(idx+1)).focus();
+  if (idx === 5) el.blur();
+}
+
+function getOTP(prefix='') {
+  return [0,1,2,3,4,5].map(i => (document.getElementById(prefix+'otp'+i)||{value:''}).value).join('');
+}
+
+function showBanner(msg, type) {
+  const b = document.getElementById('inapp-banner');
+  b.style.background = type==='ok' ? '#3E8B5C' : type==='err' ? '#C1503D' : '#FF6B35';
+  b.style.color = '#fff';
+  b.textContent = msg;
+  b.style.transform = 'translateY(0)';
+  setTimeout(() => { b.style.transform = 'translateY(-100%)'; }, 4000);
+}
+
+// ===== GOOGLE SIGN IN =====
+window.addEventListener('load', () => {
+  if (window.google) initGoogle();
+});
+function initGoogle() {
+  google.accounts.id.initialize({
+    client_id: GOOGLE_CLIENT_ID,
+    callback: handleGoogleCredential
+  });
+  google.accounts.id.renderButton(
+    document.getElementById('google-btn-container'),
+    { theme:'outline', size:'large', text:'continue_with', width:312, logo_alignment:'center' }
+  );
+}
+
+async function handleGoogleCredential(response) {
+  const token = response.credential;
+  // Decodam JWT pentru a obtine datele
+  const payload = JSON.parse(atob(token.split('.')[1]));
+  const email = payload.email;
+  const nume = payload.name;
+  const tel = localStorage.getItem('huex_client_tel');
+
+  // Cautam colaboratorul dupa email
+  try {
+    const col = await pb.collection('colaboratori').getFirstListItem(`email="${email}"`).catch(() => null);
+    if (col) {
+      currentColaborator = col;
+      currentTelefon = col.telefon;
+      currentEmail = email;
+      localStorage.setItem('huex_client_tel', col.telefon);
+      localStorage.setItem('huex_client_col', JSON.stringify(col));
+      await bootApp();
+    } else {
+      // Nu exista cont - verificam daca are telefon inregistrat
+      if (tel) {
+        const colTel = await pb.collection('colaboratori').getFirstListItem(`telefon="${tel}"`).catch(() => null);
+        if (colTel) {
+          // Actualizam email pe colaborator
+          await pb.collection('colaboratori').update(colTel.id, { email }).catch(() => {});
+          currentColaborator = colTel;
+          currentTelefon = tel;
+          currentEmail = email;
+          localStorage.setItem('huex_client_col', JSON.stringify(colTel));
+          await bootApp();
+          return;
+        }
+      }
+      // Cream cont nou cu Google
+      pendingRegData = { email, nume, telefon: tel || '', google: true };
+      if (!tel) {
+        showStep('step-start');
+        document.getElementById('msg-start').className = 'msg err';
+        document.getElementById('msg-start').textContent = 'Te rugăm introdu mai întâi numărul de telefon.';
+        return;
+      }
+      await createColaborator(pendingRegData);
+    }
+  } catch(e) {
+    showBanner('Eroare la autentificarea Google.', 'err');
+  }
+}
+
+// ===== AUTH FLOW =====
+async function checkTelefon() {
+  const tel = document.getElementById('inp-tel-start').value.trim();
+  const msg = document.getElementById('msg-start');
+  msg.className = 'msg';
+  if (!tel) { msg.className='msg err'; msg.textContent='Introdu numărul de telefon.'; return; }
+
+  localStorage.setItem('huex_client_tel', tel);
+  currentTelefon = tel;
+
+  try {
+    const col = await pb.collection('colaboratori').getFirstListItem(`telefon="${tel}"`);
+    // Cont existent
+    currentColaborator = col;
+    document.getElementById('login-sub').textContent = `Bun venit, ${col.nume.split(' ')[0]}!`;
+    showStep('step-login');
+  } catch(e) {
+    // Cont nou
+    document.getElementById('inp-tel-start') && (document.getElementById('inp-tel-start').value = tel);
+    showStep('step-register');
+    document.getElementById('inp-parola-reg') && document.getElementById('inp-parola-reg').focus();
+  }
+}
+
+async function doLogin() {
+  const parola = document.getElementById('inp-parola-login').value;
+  const msg = document.getElementById('msg-login');
+  msg.className = 'msg';
+  if (!parola) { msg.className='msg err'; msg.textContent='Introdu parola.'; return; }
+
+  // Verificam parola (stocata hash in colaboratori.parola_hash)
+  try {
+    const col = await pb.collection('colaboratori').getFirstListItem(`telefon="${currentTelefon}"`);
+    // Verificam parola simplu - in productie foloseste bcrypt
+    if (col.parola_hash !== btoa(parola)) {
+      msg.className='msg err'; msg.textContent='Parolă incorectă.'; return;
+    }
+    currentColaborator = col;
+    currentEmail = col.email || '';
+    localStorage.setItem('huex_client_col', JSON.stringify(col));
+    await bootApp();
+  } catch(e) {
+    msg.className='msg err'; msg.textContent='Eroare la autentificare.';
+  }
+}
+
+async function doRegister() {
+  const nume = document.getElementById('inp-nume-reg').value.trim();
+  const email = document.getElementById('inp-email-reg').value.trim();
+  const parola = document.getElementById('inp-parola-reg').value;
+  const parola2 = document.getElementById('inp-parola-reg2').value;
+  const msg = document.getElementById('msg-register');
+  msg.className = 'msg';
+
+  if (!nume || !email || !parola) { msg.className='msg err'; msg.textContent='Completează toate câmpurile.'; return; }
+  if (parola.length < 8) { msg.className='msg err'; msg.textContent='Parola trebuie să aibă cel puțin 8 caractere.'; return; }
+  if (parola !== parola2) { msg.className='msg err'; msg.textContent='Parolele nu coincid.'; return; }
+
+  pendingRegData = { nume, email, telefon: currentTelefon, parola };
+
+  // Trimite OTP pe email
+  const cod = String(Math.floor(100000 + Math.random() * 900000));
+  pendingOTPCod = cod;
+
+  try {
+    await fetch('/push/send-otp-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, cod, nume })
+    });
+    document.getElementById('verify-email-sub').textContent = `Am trimis un cod la ${email}`;
+    currentEmail = email;
+    showStep('step-verify-email');
+    document.getElementById('otp0').focus();
+    // Salveaza OTP in PocketBase
+    const expires = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+    const vechi = await pb.collection('otp_sessions').getFullList({filter:`telefon="${currentTelefon}"`}).catch(()=>[]);
+    for(const v of vechi) await pb.collection('otp_sessions').delete(v.id).catch(()=>{});
+    await pb.collection('otp_sessions').create({ telefon: currentTelefon, cod, expires_at: expires });
+  } catch(e) {
+    msg.className='msg err'; msg.textContent='Eroare la trimiterea codului.';
+  }
+}
+
+async function verifyEmailOTP() {
+  const cod = getOTP();
+  const msg = document.getElementById('msg-verify');
+  msg.className = 'msg';
+  if (cod.length < 6) { msg.className='msg err'; msg.textContent='Introdu toate cele 6 cifre.'; return; }
+
+  try {
+    const session = await pb.collection('otp_sessions').getFirstListItem(`telefon="${currentTelefon}" && cod="${cod}"`);
+    if (new Date(session.expires_at) < new Date()) {
+      msg.className='msg err'; msg.textContent='Codul a expirat. Solicită unul nou.'; return;
+    }
+    await pb.collection('otp_sessions').delete(session.id).catch(()=>{});
+    await createColaborator(pendingRegData);
+  } catch(e) {
+    msg.className='msg err'; msg.textContent='Cod incorect.';
+  }
+}
+
+async function createColaborator(data) {
+  try {
+    // Genereaza cod QR unic
+    const cod_qr = 'MST-' + Math.random().toString(36).substr(2,6).toUpperCase();
+    const newCol = await pb.collection('colaboratori').create({
+      nume: data.nume,
+      telefon: data.telefon,
+      email: data.email,
+      cod_qr,
+      parola_hash: data.parola ? btoa(data.parola) : '',
+    });
+    currentColaborator = newCol;
+    currentEmail = data.email;
+    localStorage.setItem('huex_client_tel', data.telefon);
+    localStorage.setItem('huex_client_col', JSON.stringify(newCol));
+    // Email bun venit
+    await fetch('/push/send-welcome-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: data.email, nume: data.nume })
+    }).catch(()=>{});
+    await bootApp();
+  } catch(e) {
+    showBanner('Eroare la crearea contului: ' + e.message, 'err');
+  }
+}
+
+async function resendOTP() {
+  if (!currentEmail || !pendingOTPCod) return;
+  const cod = String(Math.floor(100000 + Math.random() * 900000));
+  pendingOTPCod = cod;
+  await fetch('/push/send-otp-email', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: currentEmail, cod, nume: pendingRegData?.nume || '' })
+  });
+  showBanner('Cod retrimis pe email!', 'ok');
+}
+
+async function sendForgotOTP() {
+  const email = document.getElementById('inp-email-forgot').value.trim();
+  const msg = document.getElementById('msg-forgot');
+  msg.className = 'msg';
+  if (!email) { msg.className='msg err'; msg.textContent='Introdu emailul.'; return; }
+
+  try {
+    const col = await pb.collection('colaboratori').getFirstListItem(`email="${email}"`);
+    const cod = String(Math.floor(100000 + Math.random() * 900000));
+    pendingForgotEmail = email;
+    pendingOTPCod = cod;
+    currentColaborator = col;
+    const expires = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+    await pb.collection('otp_sessions').create({ telefon: col.telefon, cod, expires_at: expires });
+    await fetch('/push/send-otp-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, cod, nume: col.nume })
+    });
+    showStep('step-reset');
+    document.getElementById('rotp0').focus();
+  } catch(e) {
+    msg.className='msg err'; msg.textContent='Email negăsit în sistem.';
+  }
+}
+
+async function doResetParola() {
+  const cod = getOTP('r');
+  const parola = document.getElementById('inp-parola-new').value;
+  const msg = document.getElementById('msg-reset');
+  msg.className = 'msg';
+  if (cod.length < 6) { msg.className='msg err'; msg.textContent='Introdu codul complet.'; return; }
+  if (!parola || parola.length < 8) { msg.className='msg err'; msg.textContent='Parola trebuie să aibă cel puțin 8 caractere.'; return; }
+
+  try {
+    const session = await pb.collection('otp_sessions').getFirstListItem(`telefon="${currentColaborator.telefon}" && cod="${cod}"`);
+    if (new Date(session.expires_at) < new Date()) {
+      msg.className='msg err'; msg.textContent='Codul a expirat.'; return;
+    }
+    await pb.collection('otp_sessions').delete(session.id).catch(()=>{});
+    await pb.collection('colaboratori').update(currentColaborator.id, { parola_hash: btoa(parola) });
+    showBanner('Parola schimbată cu succes!', 'ok');
+    localStorage.setItem('huex_client_col', JSON.stringify(currentColaborator));
+    currentTelefon = currentColaborator.telefon;
+    await bootApp();
+  } catch(e) {
+    msg.className='msg err'; msg.textContent='Cod incorect sau expirat.';
+  }
+}
+
+// ===== APP =====
+async function bootApp() {
+  document.getElementById('screen-auth').style.display = 'none';
+  document.getElementById('screen-app').style.display = 'flex';
+  const initiale = currentColaborator.nume.split(' ').map(p=>p[0]||'').slice(0,2).join('').toUpperCase();
+  document.getElementById('app-avatar').textContent = initiale;
+  const cod = currentColaborator.cod_qr;
+  document.getElementById('qr-cod-text').textContent = cod;
+  const qrContainer = document.getElementById('qr-canvas');
+  qrContainer.innerHTML = '';
+  new QRCode(qrContainer, { text:cod, width:160, height:160, colorDark:'#132239', colorLight:'#ffffff', correctLevel:QRCode.CorrectLevel.M });
+  await loadContent();
+  setTimeout(initPushNotifications, 2000);
+  setTimeout(checkPendingConfirmari, 1500);
+  setInterval(checkPendingConfirmari, 30000);
+}
+
+async function loadContent() {
+  const el = document.getElementById('app-content');
+  el.innerHTML = '<div class="loader"><div class="spinner"></div></div>';
+  const [conturi, toatePromotii, tranzactii] = await Promise.all([
+    pb.collection('conturi_puncte').getFullList({ filter:`colaborator="${currentColaborator.id}"`, expand:'magazin', sort:'-cumulat' }),
+    pb.collection('promotii').getFullList({ filter:'activa=true' }).catch(()=>[]),
+    pb.collection('tranzactii').getFullList({ filter:`colaborator="${currentColaborator.id}"`, expand:'magazin', sort:'-created' }).catch(()=>[]),
+  ]);
+  const azi = new Date();
+  _promotiiCache = toatePromotii;
+  const promotiiActive = toatePromotii.filter(p => new Date(p.data_end) >= azi);
+
+  const puncteHtml = `
+    <div id="confirmare-zone"></div>
+    <div class="section-title">Punctele mele</div>
+    <div class="mag-list">
+      ${conturi.length ? conturi.map(c => {
+        const mag = c.expand?.magazin;
+        const niv = NIVEL[c.nivel] || NIVEL.silver;
+        const init = (mag?.nume||'?').charAt(0).toUpperCase();
+        const promMag = promotiiActive.filter(p => p.magazin === mag?.id);
+        const areProm = promMag.length > 0;
+        return `<div class="mag-card" onclick="${areProm ? `showPromotii('${mag?.id||''}','${(mag?.nume||'').replace(/'/g,'')}')` : ''}">
+          <div class="mag-icon">${init}</div>
+          <div class="mag-info">
+            <div style="display:flex;align-items:center;gap:6px;">
+              <div class="mag-name">${mag?.nume||'—'}</div>
+              ${areProm ? '<span style="background:#FF6B35;color:#fff;font-size:9px;font-weight:800;padding:2px 6px;border-radius:999px;">PROMO</span>' : ''}
+            </div>
+            <div class="mag-type">${mag?.tip||'Partener HUEX'}</div>
+            <span class="nivel-badge" style="background:${niv.bg};color:${niv.color};">${niv.label.toUpperCase()}</span>
+          </div>
+          <div class="mag-right">
+            <div class="mag-puncte">${Number(c.sold||0).toLocaleString('ro-RO')}</div>
+            <div class="mag-puncte-label">puncte</div>
+            ${areProm ? `<div style="font-size:10px;color:#FF6B35;font-weight:700;margin-top:2px;">${promMag.length} promoții →</div>` : ''}
+          </div>
+        </div>`;
+      }).join('') : '<div class="empty"><p>Nu ai puncte la niciun magazin partener.</p></div>'}
+    </div>`;
+
+  const istoricHtml = `
+    <div class="section-title">Istoric tranzacții</div>
+    <div class="tx-list">
+      ${tranzactii.length ? tranzactii.slice(0,30).map(t => {
+        const mag = t.expand?.magazin;
+        const semn = t.tip==='emitere' ? '+' : '-';
+        const culoare = t.tip==='emitere' ? '#3E8B5C' : '#C1503D';
+        const data = new Date(t.created).toLocaleDateString('ro-RO',{day:'2-digit',month:'short',year:'numeric'});
+        const status = {pending:'În așteptare',confirmata:'Confirmat',anulata:'Anulat'}[t.status]||t.status;
+        return `<div class="tx-item">
+          <div class="tx-left">
+            <div class="tx-mag">${mag?.nume||'—'}</div>
+            <div class="tx-date">${data} · ${status}</div>
+          </div>
+          <div class="tx-right">
+            <div class="tx-pts" style="color:${culoare};">${semn}${t.puncte} pct</div>
+            <div class="tx-status">${Number(t.valoare_neta||0).toLocaleString('ro-RO')} RON</div>
+          </div>
+        </div>`;
+      }).join('') : '<div class="empty"><p>Nicio tranzacție înregistrată.</p></div>'}
+    </div>`;
+
+  const profilHtml = `
+    <div class="profil-section">
+      <div class="profil-card">
+        <div class="profil-avatar-big">${currentColaborator.nume.split(' ').map(p=>p[0]||'').slice(0,2).join('').toUpperCase()}</div>
+        <div class="profil-name">${currentColaborator.nume}</div>
+        <div class="profil-tel">${currentColaborator.telefon}</div>
+        <div class="profil-email">${currentColaborator.email||''}</div>
+      </div>
+      <div class="profil-card">
+        <div class="section-title" style="margin-bottom:0;">Setări cont</div>
+        <div class="profil-row">
+          <div class="profil-row-label">Codul meu QR</div>
+          <div class="profil-row-val" style="font-family:'IBM Plex Mono',monospace;">${currentColaborator.cod_qr}</div>
+        </div>
+        <div class="profil-row">
+          <div class="profil-row-label">Notificări push</div>
+          <div class="toggle on" id="toggle-push" onclick="togglePush()"></div>
+        </div>
+      </div>
+      <button class="btn-logout" onclick="doLogout()">Ieșire din cont</button>
+    </div>`;
+
+  el.innerHTML = `
+    <div class="tab-content active" id="tab-puncte">${puncteHtml}</div>
+    <div class="tab-content" id="tab-tranzactii">${istoricHtml}</div>
+    <div class="tab-content" id="tab-profil">${profilHtml}</div>`;
+
+  switchTab(activeTab);
+  checkPendingConfirmari();
+}
+
+function switchTab(tab, el) {
+  activeTab = tab;
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  const content = document.getElementById('tab-'+tab);
+  if (content) content.classList.add('active');
+  if (el) el.classList.add('active');
+}
+
+// ===== CONFIRMARE TRANZACTIE =====
+async function checkPendingConfirmari() {
+  if (!currentColaborator) return;
+  try {
+    const resp = await fetch('/push/pending/' + currentColaborator.id);
+    const data = await resp.json();
+    const zone = document.getElementById('confirmare-zone');
+    if (!zone) return;
+    if (!data.items || data.items.length === 0) { zone.innerHTML = ''; return; }
+    zone.innerHTML = data.items.map(txn => `
+      <div class="confirmare-banner">
+        <div class="confirmare-title">⚠️ Confirmare plată cu puncte</div>
+        <div class="confirmare-info">${txn.magazinNume} solicită ${txn.puncte} puncte (${txn.valoare} RON reducere)</div>
+        <div class="confirmare-btns">
+          <button class="btn-confirma" onclick="raspundeConfirmare('${txn.txnId}','confirmat')">✓ Confirmă</button>
+          <button class="btn-refuza" onclick="raspundeConfirmare('${txn.txnId}','refuzat')">✕ Refuză</button>
+        </div>
+      </div>`).join('');
+    // Schimba pe tab puncte
+    if (activeTab !== 'puncte') switchTab('puncte', document.querySelector('.nav-tab'));
+  } catch(e) {}
+}
+
+async function raspundeConfirmare(txnId, decizie) {
+  try {
+    const resp = await fetch('/push/confirma-txn', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ txnId, decizie, colaboratorId: currentColaborator.id })
+    });
+    const data = await resp.json();
+    if (data.ok) {
+      showBanner(decizie === 'confirmat' ? '✓ Plată confirmată!' : 'Plată refuzată.', decizie === 'confirmat' ? 'ok' : 'err');
+      await loadContent();
+    }
+  } catch(e) {
+    showBanner('Eroare la procesarea confirmării.', 'err');
+  }
+}
+
+// ===== PROMOTII =====
+function showPromotii(magId, magNume) {
+  if (!magId) return;
+  const azi = new Date();
+  const proms = _promotiiCache.filter(p => p.magazin===magId && p.activa && new Date(p.data_end)>=azi);
+  document.getElementById('modal-title').textContent = magNume + ' — Promoții active';
+  document.getElementById('modal-content').innerHTML = proms.map(p => {
+    const start = new Date(p.data_start).toLocaleDateString('ro-RO',{day:'2-digit',month:'short'});
+    const end = new Date(p.data_end).toLocaleDateString('ro-RO',{day:'2-digit',month:'short',year:'numeric'});
+    const imgHtml = p.imagine ? `<img class="promo-img" src="${pb.files.getUrl(p,p.imagine)}" />` : '';
+    return `<div class="promo-card">${imgHtml}<div class="promo-body"><div class="promo-title">${p.titlu}</div>${p.descriere?`<div class="promo-desc">${p.descriere}</div>`:''}<div class="promo-footer"><span class="promo-mult">x${p.multiplicator} puncte</span><span class="promo-date">${start} — ${end}</span></div></div></div>`;
+  }).join('') || '<p style="text-align:center;color:var(--text-sec);padding:20px;">Nicio promoție activă.</p>';
+  document.getElementById('promo-modal').classList.add('open');
+}
+
+function closeModal(e) {
+  if (e.target.id==='promo-modal') document.getElementById('promo-modal').classList.remove('open');
+}
+
+// ===== PUSH NOTIFICATIONS =====
+async function initPushNotifications() {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    const existing = await reg.pushManager.getSubscription();
+    if (existing) { await registerSubOnServer(existing); return; }
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') return;
+    const resp = await fetch('/push/vapid-public');
+    const {publicKey} = await resp.json();
+    const sub = await reg.pushManager.subscribe({ userVisibleOnly:true, applicationServerKey:urlBase64ToUint8Array(publicKey) });
+    await registerSubOnServer(sub);
+  } catch(e) {}
+}
+
+async function registerSubOnServer(sub) {
+  if (!currentColaborator) return;
+  await fetch('/push/subscribe', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ colaboratorId:currentColaborator.id, subscription:sub.toJSON() }) }).catch(()=>{});
+}
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; ++i) outputArray[i] = rawData.charCodeAt(i);
+  return outputArray;
+}
+
+function togglePush() {
+  const t = document.getElementById('toggle-push');
+  t.classList.toggle('on');
+}
+
+// ===== LOGOUT =====
+function doLogout() {
+  localStorage.removeItem('huex_client_tel');
+  localStorage.removeItem('huex_client_col');
+  location.reload();
+}
+
+// ===== INIT =====
+(async function init() {
+  const tel = localStorage.getItem('huex_client_tel');
+  const colStr = localStorage.getItem('huex_client_col');
+  if (tel && colStr) {
+    try {
+      currentColaborator = JSON.parse(colStr);
+      currentTelefon = tel;
+      currentEmail = currentColaborator.email || '';
+      currentColaborator = await pb.collection('colaboratori').getOne(currentColaborator.id);
+      await bootApp();
+    } catch(e) {
+      localStorage.removeItem('huex_client_tel');
+      localStorage.removeItem('huex_client_col');
+    }
+  }
+  // Initializeaza Google
+  if (window.google && window.google.accounts) initGoogle();
+})();
+</script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/client/sw.js').catch(()=>{});
+}
+</script>
+</body>
+</html>
