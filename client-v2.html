@@ -415,15 +415,15 @@ body{background:var(--bg);color:var(--text);overflow-x:hidden;}
     </div>
   </div>
 
-  <!-- STEP 7: Reset PIN - cod + PIN nou -->
+  <!-- STEP 7: Reset PIN - doar cod OTP -->
   <div id="step-reset-pin" style="display:none;flex-direction:column;min-height:100vh;">
     <div class="auth-header">
-      <div class="auth-title">PIN nou</div>
-      <div class="auth-sub">Introdu codul primit pe email.</div>
+      <div class="auth-title">Cod de verificare</div>
+      <div class="auth-sub">Introdu codul de 6 cifre primit pe email.</div>
     </div>
     <div class="auth-body">
       <div class="auth-card">
-        <div class="otp-row" style="margin-bottom:24px;">
+        <div class="otp-row">
           <input type="text" class="otp-box" maxlength="1" inputmode="numeric" id="r0" oninput="otpNav(this,0,'r')" />
           <input type="text" class="otp-box" maxlength="1" inputmode="numeric" id="r1" oninput="otpNav(this,1,'r')" />
           <input type="text" class="otp-box" maxlength="1" inputmode="numeric" id="r2" oninput="otpNav(this,2,'r')" />
@@ -431,7 +431,21 @@ body{background:var(--bg);color:var(--text);overflow-x:hidden;}
           <input type="text" class="otp-box" maxlength="1" inputmode="numeric" id="r4" oninput="otpNav(this,4,'r')" />
           <input type="text" class="otp-box" maxlength="1" inputmode="numeric" id="r5" oninput="otpNav(this,5,'r')" />
         </div>
-        <p style="font-size:13px;color:var(--text-sec);margin-bottom:16px;text-align:center;">Acum alege un PIN nou din 4 cifre</p>
+        <button class="btn btn-navy" onclick="verifyResetCode()" style="margin-top:16px;">Verifică codul</button>
+        <button class="btn btn-outline" onclick="showStep('step-forgot')" style="margin-top:10px;">← Înapoi</button>
+        <div class="msg" id="msg-reset-pin"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 8: PIN nou dupa reset -->
+  <div id="step-new-pin" style="display:none;flex-direction:column;min-height:100vh;">
+    <div class="auth-header">
+      <div class="auth-title">PIN nou</div>
+      <div class="auth-sub">Alege un cod din 4 cifre pentru contul tău.</div>
+    </div>
+    <div class="auth-body">
+      <div class="auth-card">
         <div class="pin-display">
           <div class="pin-dot" id="rp0"></div>
           <div class="pin-dot" id="rp1"></div>
@@ -452,7 +466,7 @@ body{background:var(--bg);color:var(--text);overflow-x:hidden;}
           <div class="pin-key" onclick="pinKey('reset','0')">0</div>
           <div class="pin-key del" onclick="pinDel('reset')">⌫</div>
         </div>
-        <div class="msg" id="msg-reset-pin"></div>
+        <div class="msg" id="msg-new-pin"></div>
       </div>
     </div>
   </div>
@@ -463,7 +477,12 @@ body{background:var(--bg);color:var(--text);overflow-x:hidden;}
 <div id="screen-app" style="display:none;min-height:100vh;flex-direction:column;background:var(--bg);">
   <div class="app-topbar">
     <div class="topbar-logo">HUEX<em>.</em></div>
-    <div class="topbar-avatar" id="app-avatar" onclick="switchTab('profil',null)">—</div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div class="topbar-avatar" id="app-avatar">—</div>
+      <button onclick="doLogout()" style="background:none;border:none;cursor:pointer;padding:6px;color:var(--text-sec);" title="Ieșire">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      </button>
+    </div>
   </div>
   <div class="qr-hero">
     <div class="qr-hero-inner">
@@ -592,9 +611,7 @@ async function pinComplete(mode){
     await doLoginPin(pins[mode]);
     pins[mode] = ''; updatePinDisplay(mode);
   } else if(mode==='reset'){
-    const cod = getOTP('r');
-    if(cod.length<6){ showMsg('msg-reset-pin','Introdu mai întâi codul de 6 cifre.','err'); pins[mode]=''; updatePinDisplay(mode); return; }
-    await doResetPin(cod, pins[mode]);
+    await doResetPin(pins[mode]);
     pins[mode]=''; updatePinDisplay(mode);
   }
 }
@@ -717,23 +734,40 @@ async function sendResetCode(){
   }
 }
 
-async function doResetPin(cod, pin){
+let verifiedResetCod = '';
+
+async function verifyResetCode(){
+  const cod = getOTP('r');
+  if(cod.length<6){ showMsg('msg-reset-pin','Introdu toate cele 6 cifre.','err'); return; }
   try{
     const session = await pb.collection('otp_sessions').getFirstListItem(`telefon="${col.telefon}" && cod="${cod}"`);
-    if(new Date(session.expires_at)<new Date()){ showMsg('msg-reset-pin','Codul a expirat.','err'); return; }
+    if(new Date(session.expires_at)<new Date()){ showMsg('msg-reset-pin','Codul a expirat. Solicită unul nou.','err'); return; }
     await pb.collection('otp_sessions').delete(session.id).catch(()=>{});
+    verifiedResetCod = cod;
+    pins.reset = '';
+    updatePinDisplay('reset');
+    showStep('step-new-pin');
+  }catch(e){
+    showMsg('msg-reset-pin','Cod incorect. Verifică și încearcă din nou.','err');
+  }
+}
+
+async function doResetPin(pin){
+  try{
     await pb.collection('colaboratori').update(col.id,{pin_hash:btoa(pin)});
     col.pin_hash = btoa(pin);
     localStorage.setItem('huex_col',JSON.stringify(col));
     showBanner('PIN schimbat cu succes!','ok');
     await bootApp();
   }catch(e){
-    showMsg('msg-reset-pin','Cod incorect sau expirat.','err');
+    showMsg('msg-new-pin','Eroare la salvarea PIN-ului.','err');
   }
 }
 
 // ===== APP =====
 async function bootApp(){
+  sessionActive = true;
+  startSessionTimer();
   document.getElementById('screen-auth').style.display = 'none';
   document.getElementById('screen-app').style.display = 'flex';
   const init = col.nume.split(' ').map(p=>p[0]||'').slice(0,2).join('').toUpperCase();
@@ -915,6 +949,8 @@ function b64ToUint8(b64){
 
 // ===== LOGOUT =====
 function doLogout(){
+  sessionActive = false;
+  clearTimeout(sessionTimer);
   col=null;
   localStorage.removeItem('huex_col');
   document.getElementById('screen-app').style.display='none';
@@ -922,6 +958,33 @@ function doLogout(){
   document.getElementById('inp-phone').value='';
   showStep('step-phone');
 }
+
+// ===== SESIUNE 30 SECUNDE =====
+let sessionTimer = null;
+let sessionActive = false;
+
+function startSessionTimer(){
+  clearTimeout(sessionTimer);
+  sessionTimer = setTimeout(()=>{
+    // Expira sesiunea - cere PIN din nou
+    sessionActive = false;
+    document.getElementById('screen-app').style.display = 'none';
+    document.getElementById('screen-auth').style.display = 'flex';
+    pins.login = '';
+    updatePinDisplay('login');
+    showStep('step-login-pin');
+  }, 30000); // 30 secunde
+}
+
+function resetSessionTimer(){
+  if(!sessionActive) return;
+  startSessionTimer();
+}
+
+// Reseteaza timer la orice interactiune
+['touchstart','click','keydown','scroll'].forEach(evt=>{
+  document.addEventListener(evt, resetSessionTimer, {passive:true});
+});
 
 // ===== INIT =====
 (async function init(){
