@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="theme-color" content="#FFFFFF"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-title" content="HUEX"/>
+<title>HUEX — Cardul tău digital de fidelitate</title>
+<link rel="manifest" href="/client/manifest.json"/>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#0D1B2A;
+  --blue:#3B9FE3;
+  --blue-light:#EBF5FD;
+  --white:#FFFFFF;
+  --bg:#F8F9FA;
+  --border:#E5E7EB;
+  --text:#0D1B2A;
+  --text-sec:#6B7280;
+  --green:#16A34A;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{font-family:'Inter',sans-serif;background:var(--white);color:var(--text);min-height:100vh;}
+
+/* HEADER */
+.header{padding:20px 24px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);}
+.logo{display:flex;align-items:center;gap:10px;text-decoration:none;}
+.logo-mark{width:36px;height:36px;background:var(--navy);border-radius:10px;display:flex;align-items:center;justify-content:center;}
+.logo-mark span{color:var(--blue);font-size:18px;font-weight:900;}
+.logo-text{font-size:20px;font-weight:900;color:var(--navy);letter-spacing:-.02em;}
+.logo-text em{color:var(--blue);font-style:normal;}
+.btn-login{background:none;border:1.5px solid var(--border);border-radius:10px;padding:8px 18px;font-size:14px;font-weight:600;color:var(--navy);cursor:pointer;font-family:inherit;text-decoration:none;}
+
+/* HERO */
+.hero{padding:48px 24px 40px;text-align:center;max-width:560px;margin:0 auto;}
+.hero-badge{display:inline-flex;align-items:center;gap:6px;background:var(--blue-light);border:1px solid rgba(59,159,227,.2);border-radius:999px;padding:5px 14px;font-size:12px;font-weight:700;color:var(--blue);margin-bottom:24px;}
+.hero-badge span{width:6px;height:6px;background:var(--blue);border-radius:50%;animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
+.hero h1{font-size:clamp(28px,7vw,42px);font-weight:900;color:var(--navy);line-height:1.1;letter-spacing:-.03em;margin-bottom:16px;}
+.hero h1 em{color:var(--blue);font-style:normal;}
+.hero p{font-size:16px;color:var(--text-sec);line-height:1.7;margin-bottom:32px;}
+
+/* CTA BUTTONS */
+.cta-group{display:flex;flex-direction:column;gap:12px;max-width:360px;margin:0 auto 48px;}
+.btn-primary{background:var(--navy);color:#fff;border:none;border-radius:14px;padding:16px 24px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:10px;transition:opacity .2s;}
+.btn-primary:hover{opacity:.88;}
+.btn-secondary{background:var(--white);color:var(--navy);border:1.5px solid var(--border);border-radius:14px;padding:16px 24px;font-size:16px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:10px;transition:all .2s;text-decoration:none;}
+.btn-secondary:hover{border-color:var(--navy);}
+
+/* INSTALL BANNER */
+#install-banner{background:linear-gradient(135deg,#0D1B2A,#1A2E42);border-radius:16px;padding:20px;margin:0 24px 32px;display:none;align-items:center;gap:16px;max-width:512px;margin-left:auto;margin-right:auto;}
+#install-banner.show{display:flex;}
+.install-icon{width:52px;height:52px;background:rgba(59,159,227,.15);border-radius:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.install-icon svg{width:28px;height:28px;color:var(--blue);}
+.install-text{flex:1;}
+.install-text h3{font-size:15px;font-weight:700;color:#fff;margin-bottom:3px;}
+.install-text p{font-size:12px;color:rgba(255,255,255,.5);}
+.btn-install{background:var(--blue);color:#fff;border:none;border-radius:10px;padding:10px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;flex-shrink:0;}
+
+/* STEPS */
+.steps-section{background:var(--bg);padding:40px 24px;}
+.steps-title{font-size:20px;font-weight:800;color:var(--navy);text-align:center;margin-bottom:8px;letter-spacing:-.01em;}
+.steps-sub{font-size:14px;color:var(--text-sec);text-align:center;margin-bottom:32px;}
+.steps{display:flex;flex-direction:column;gap:16px;max-width:480px;margin:0 auto;}
+.step{background:var(--white);border:1.5px solid var(--border);border-radius:16px;padding:20px;display:flex;gap:16px;align-items:flex-start;}
+.step-num{width:36px;height:36px;background:var(--navy);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:var(--blue);flex-shrink:0;}
+.step-content h4{font-size:15px;font-weight:700;color:var(--navy);margin-bottom:4px;}
+.step-content p{font-size:13px;color:var(--text-sec);line-height:1.6;}
+
+/* PARTENERI */
+.parteneri-section{padding:40px 24px;}
+.parteneri-title{font-size:20px;font-weight:800;color:var(--navy);text-align:center;margin-bottom:8px;}
+.parteneri-sub{font-size:14px;color:var(--text-sec);text-align:center;margin-bottom:28px;}
+.parteneri-grid{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;max-width:480px;margin:0 auto 28px;}
+.partener-pill{background:var(--bg);border:1.5px solid var(--border);border-radius:10px;padding:10px 18px;font-size:14px;font-weight:700;color:var(--navy);}
+.parteneri-hint{text-align:center;font-size:13px;color:var(--text-sec);line-height:1.6;max-width:360px;margin:0 auto;}
+.parteneri-hint strong{color:var(--blue);}
+
+/* INFO CARDS */
+.info-section{background:var(--bg);padding:40px 24px;}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:480px;margin:0 auto;}
+.info-card{background:var(--white);border:1.5px solid var(--border);border-radius:14px;padding:18px;}
+.info-card-ico{font-size:24px;margin-bottom:10px;}
+.info-card h4{font-size:14px;font-weight:700;color:var(--navy);margin-bottom:4px;}
+.info-card p{font-size:12px;color:var(--text-sec);line-height:1.6;}
+
+/* FOOTER */
+.footer{padding:32px 24px;text-align:center;border-top:1px solid var(--border);}
+.footer p{font-size:12px;color:var(--text-sec);}
+.footer a{color:var(--blue);text-decoration:none;font-weight:600;}
+
+/* MODAL LOGIN */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;display:none;align-items:flex-end;justify-content:center;}
+.modal-bg.open{display:flex;}
+.modal-sheet{background:#fff;border-radius:20px 20px 0 0;width:100%;max-width:500px;padding:24px 24px 40px;}
+.modal-handle{width:40px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 24px;}
+.modal-title{font-size:20px;font-weight:800;color:var(--navy);margin-bottom:6px;}
+.modal-sub{font-size:14px;color:var(--text-sec);margin-bottom:24px;}
+.field-label{font-size:11px;font-weight:700;color:var(--text);display:block;margin-bottom:6px;letter-spacing:.04em;text-transform:uppercase;}
+.input{width:100%;background:#fff;border:1.5px solid var(--border);border-radius:12px;padding:14px 16px;font-size:16px;color:var(--text);font-family:inherit;outline:none;transition:border-color .2s;margin-bottom:14px;}
+.input:focus{border-color:var(--blue);}
+.btn-modal{width:100%;background:var(--navy);color:#fff;border:none;border-radius:12px;padding:15px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;}
+.msg{font-size:13px;text-align:center;padding:10px;border-radius:8px;margin-top:8px;display:none;}
+.msg.show.err{display:block;background:#FEE2E2;color:#DC2626;}
+
+/* iOS install hint */
+.ios-hint{background:var(--blue-light);border:1px solid rgba(59,159,227,.2);border-radius:14px;padding:16px;margin:0 24px 24px;max-width:512px;margin-left:auto;margin-right:auto;display:none;}
+.ios-hint.show{display:block;}
+.ios-hint p{font-size:13px;color:var(--navy);line-height:1.7;text-align:center;}
+.ios-hint strong{color:var(--blue);}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <a href="https://huex.ro" class="logo">
+    <div class="logo-mark"><span>H</span></div>
+    <div class="logo-text">HUEX<em>.</em></div>
+  </a>
+  <a href="#" class="btn-login" onclick="openLogin()">Am deja cont</a>
+</div>
+
+<div class="hero">
+  <div class="hero-badge"><span></span>Card digital de fidelitate</div>
+  <h1>Acumulează puncte la <em>magazinele partenere</em> HUEX</h1>
+  <p>Descarcă aplicația HUEX, primești un cod QR personal și acumulezi puncte la fiecare achiziție. <strong>1 punct = 1 RON</strong> reducere directă.</p>
+  <div class="cta-group">
+    <button class="btn-primary" id="btn-download" onclick="handleInstall()">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Descarcă aplicația HUEX
+    </button>
+    <button class="btn-secondary" onclick="openLogin()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+      Am deja cont — Intră
+    </button>
+  </div>
+</div>
+
+<!-- Banner instalare PWA (Android/Desktop) -->
+<div id="install-banner">
+  <div class="install-icon">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="3"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+  </div>
+  <div class="install-text">
+    <h3>Instalează pe telefon</h3>
+    <p>Fără App Store. Direct din browser.</p>
+  </div>
+  <button class="btn-install" id="btn-install-pwa">Instalează</button>
+</div>
+
+<!-- Hint iOS -->
+<div class="ios-hint" id="ios-hint">
+  <p>Pe iPhone: apasă <strong>Share</strong> (☐↑) în Safari, apoi <strong>„Add to Home Screen"</strong> pentru a instala aplicația HUEX pe ecranul principal.</p>
+</div>
+
+<!-- PASI -->
+<div class="steps-section">
+  <div class="steps-title">Cum funcționează</div>
+  <div class="steps-sub">3 pași simpli pentru a beneficia de puncte de fidelitate</div>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-content">
+        <h4>Creează-ți contul</h4>
+        <p>Introdu numărul de telefon și emailul. Vei primi un cod de activare pe email. Setezi un PIN de 4 cifre pentru acces rapid.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-content">
+        <h4>Prezintă codul QR la casă</h4>
+        <p>La fiecare achiziție la un magazin partener HUEX, arată codul QR personal angajatului. Punctele se acordă instant.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-content">
+        <h4>Folosește punctele ca reducere</h4>
+        <p>Punctele acumulate se transformă în reducere directă. 1 punct = 1 RON. Simplu, transparent, instant.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PARTENERI -->
+<div class="parteneri-section">
+  <div class="parteneri-title">Magazine partenere HUEX</div>
+  <div class="parteneri-sub">Prezintă codul QR la oricare din magazinele de mai jos</div>
+  <div class="parteneri-grid" id="parteneri-list">
+    <div class="partener-pill">WIEKO Chemicals</div>
+    <div class="partener-pill">DULO SRL</div>
+    <div class="partener-pill">+ Magazine noi</div>
+  </div>
+  <p class="parteneri-hint">
+    Rețeaua HUEX este în continuă creștere. <strong>Caută sigla HUEX</strong> la intrarea în magazin sau întreabă angajatul dacă participă la programul de fidelitate.
+  </p>
+</div>
+
+<!-- INFO CARDS -->
+<div class="info-section">
+  <div class="info-grid">
+    <div class="info-card">
+      <div class="info-card-ico">📱</div>
+      <h4>Fără card fizic</h4>
+      <p>Totul pe telefon. Un singur cod QR pentru toate magazinele partenere.</p>
+    </div>
+    <div class="info-card">
+      <div class="info-card-ico">⚡</div>
+      <h4>Puncte instant</h4>
+      <p>Punctele intră în cont imediat după scanarea QR-ului la casă.</p>
+    </div>
+    <div class="info-card">
+      <div class="info-card-ico">🔔</div>
+      <h4>Promoții live</h4>
+      <p>Primești notificare pe telefon când un magazin lansează o promoție nouă.</p>
+    </div>
+    <div class="info-card">
+      <div class="info-card-ico">💰</div>
+      <h4>1 punct = 1 RON</h4>
+      <p>Fără calcule complicate. Punctele tale valorează direct RON la casă.</p>
+    </div>
+  </div>
+</div>
+
+<div class="footer">
+  <p>© 2026 HUEX<em style="color:var(--blue);font-style:normal;">.</em> — <a href="https://huex.ro">huex.ro</a> · <a href="https://huex.ro#contact">Contact</a></p>
+</div>
+
+<!-- MODAL LOGIN -->
+<div class="modal-bg" id="login-modal" onclick="if(event.target===this)closeLogin()">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Intră în cont</div>
+    <div class="modal-sub">Introdu numărul de telefon pentru a accesa cardul tău.</div>
+    <label class="field-label">Număr de telefon</label>
+    <input type="tel" class="input" id="modal-phone" placeholder="07xx xxx xxx" inputmode="tel"/>
+    <button class="btn-modal" onclick="goToApp()">Continuă →</button>
+    <div class="msg" id="modal-msg"></div>
+  </div>
+</div>
+
+<script>
+// Detect PWA install
+let deferredPrompt = null;
+
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  document.getElementById('install-banner').classList.add('show');
+  document.getElementById('btn-download').textContent = '📲 Instalează aplicația HUEX';
+});
+
+document.getElementById('btn-install-pwa').addEventListener('click', async () => {
+  if(!deferredPrompt) return;
+  deferredPrompt.prompt();
+  const result = await deferredPrompt.userChoice;
+  if(result.outcome === 'accepted') {
+    document.getElementById('install-banner').classList.remove('show');
+  }
+  deferredPrompt = null;
+});
+
+function handleInstall() {
+  if(deferredPrompt) {
+    deferredPrompt.prompt();
+    return;
+  }
+  // iOS Safari
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  if(isIOS) {
+    document.getElementById('ios-hint').classList.add('show');
+    document.getElementById('ios-hint').scrollIntoView({behavior:'smooth'});
+    return;
+  }
+  // Daca e deja instalata sau nu suporta - deschide app direct
+  openLogin();
+}
+
+// Verifica daca are deja cont salvat
+window.addEventListener('load', () => {
+  const saved = localStorage.getItem('huex_col');
+  if(saved) {
+    try {
+      const col = JSON.parse(saved);
+      // Are cont - schimbam butonul
+      document.getElementById('btn-download').innerHTML = `
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+        Intră în cont, ${col.nume.split(' ')[0]}
+      `;
+      document.getElementById('btn-download').onclick = () => window.location.href = '/client/app';
+    } catch(e) {}
+  }
+
+  // Incarca partenerii din PocketBase
+  loadParteneri();
+});
+
+async function loadParteneri() {
+  try {
+    const resp = await fetch('/api/collections/magazine/records?filter=activ=true&perPage=50&sort=nume');
+    const data = await resp.json();
+    if(data.items && data.items.length) {
+      const grid = document.getElementById('parteneri-list');
+      grid.innerHTML = data.items.map(m => 
+        `<div class="partener-pill">${m.nume}</div>`
+      ).join('');
+    }
+  } catch(e) {}
+}
+
+function openLogin() {
+  document.getElementById('login-modal').classList.add('open');
+  setTimeout(() => document.getElementById('modal-phone').focus(), 300);
+}
+
+function closeLogin() {
+  document.getElementById('login-modal').classList.remove('open');
+}
+
+function goToApp() {
+  const phone = document.getElementById('modal-phone').value.trim();
+  if(!phone) {
+    const msg = document.getElementById('modal-msg');
+    msg.textContent = 'Introdu numărul de telefon.';
+    msg.className = 'msg show err';
+    return;
+  }
+  // Salveaza telefonul si redirecteaza la app
+  localStorage.setItem('huex_client_tel', phone);
+  window.location.href = '/client/app';
+}
+</script>
+
+<script>
+if('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/client/sw.js').catch(()=>{});
+}
+</script>
+</body>
+</html>
