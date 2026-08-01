@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
+<meta name="theme-color" content="#0D1B2A"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="HUEX POS"/>
+<title>HUEX — Terminal Casă</title>
+<link rel="manifest" href="/casa/manifest.json"/>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/pocketbase@0.21.1/dist/pocketbase.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+:root{
+  --navy:#0D1B2A;--navy2:#1A2E42;
+  --blue:#3B9FE3;--blue-light:#EBF5FD;
+  --white:#fff;--bg:#F8F9FA;--border:#E5E7EB;
+  --text:#0D1B2A;--text-sec:#6B7280;
+  --green:#16A34A;--green-bg:#DCFCE7;
+  --red:#DC2626;--red-bg:#FEE2E2;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{font-family:'Inter',sans-serif;background:var(--navy);color:#fff;min-height:100vh;min-height:100dvh;}
+
+/* ===== LOGIN ===== */
+#screen-login{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;background:var(--navy);}
+.login-logo{display:flex;align-items:center;gap:10px;margin-bottom:40px;}
+.login-logo-mark{width:44px;height:44px;background:var(--blue);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:900;color:#fff;}
+.login-logo-text{font-size:24px;font-weight:900;color:#fff;letter-spacing:-.02em;}
+.login-logo-text em{color:var(--blue);font-style:normal;}
+.login-sub{font-size:13px;color:rgba(255,255,255,.4);margin-bottom:32px;letter-spacing:.04em;text-align:center;}
+.login-box{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:28px 24px;width:100%;max-width:380px;}
+.lbl{font-size:12px;color:rgba(255,255,255,.5);display:block;margin-bottom:6px;letter-spacing:.04em;text-transform:uppercase;}
+.inp{width:100%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:12px;padding:14px 16px;font-size:16px;color:#fff;font-family:inherit;outline:none;margin-bottom:14px;transition:border .2s;}
+.inp:focus{border-color:var(--blue);}
+.inp::placeholder{color:rgba(255,255,255,.3);}
+.btn-login{width:100%;border:none;border-radius:12px;padding:15px;font-size:16px;font-weight:700;background:var(--blue);color:#fff;cursor:pointer;font-family:inherit;transition:opacity .2s;}
+.btn-login:active{opacity:.85;}
+.login-err{font-size:13px;color:#F08080;text-align:center;margin-top:10px;min-height:18px;}
+
+/* ===== APP ===== */
+#screen-app{display:none;min-height:100vh;min-height:100dvh;flex-direction:column;background:var(--bg);}
+
+/* Header */
+.header{background:var(--navy);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;}
+.header-logo{display:flex;align-items:center;gap:8px;}
+.header-logo-mark{width:32px;height:32px;background:var(--blue);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:900;color:#fff;}
+.header-logo-text{font-size:16px;font-weight:900;color:#fff;}
+.header-logo-text em{color:var(--blue);font-style:normal;}
+.header-right{display:flex;align-items:center;gap:12px;}
+.header-mag{font-size:12px;color:rgba(255,255,255,.5);text-align:right;}
+.header-mag strong{display:block;font-size:14px;color:#fff;font-weight:700;}
+.btn-logout{background:rgba(255,255,255,.1);border:none;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:600;color:rgba(255,255,255,.7);cursor:pointer;font-family:inherit;}
+
+/* Main content */
+.app-body{flex:1;padding:24px 20px;overflow-y:auto;}
+
+/* 3 CARDURI PRINCIPALE */
+.cards-grid{display:grid;grid-template-columns:1fr;gap:14px;max-width:480px;margin:0 auto;}
+.action-card{background:var(--white);border:1.5px solid var(--border);border-radius:20px;padding:24px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:20px;text-decoration:none;}
+.action-card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.08);}
+.action-card:active{transform:scale(.98);}
+.action-card.featured{background:var(--navy);border-color:var(--navy);}
+.card-ico{width:56px;height:56px;border-radius:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.action-card:not(.featured) .card-ico{background:var(--bg);}
+.action-card.featured .card-ico{background:rgba(59,159,227,.15);}
+.card-ico svg{width:28px;height:28px;}
+.action-card:not(.featured) .card-ico svg{color:var(--navy);}
+.action-card.featured .card-ico svg{color:var(--blue);}
+.card-body{flex:1;}
+.card-title{font-size:18px;font-weight:800;color:var(--navy);margin-bottom:4px;letter-spacing:-.01em;}
+.action-card.featured .card-title{color:#fff;}
+.card-desc{font-size:13px;color:var(--text-sec);line-height:1.5;}
+.action-card.featured .card-desc{color:rgba(255,255,255,.5);}
+.card-arrow{color:var(--border);flex-shrink:0;}
+.action-card:hover .card-arrow{color:var(--navy);}
+.action-card.featured .card-arrow{color:rgba(255,255,255,.3);}
+
+/* ===== ECRANE SECUNDARE ===== */
+.screen-secondary{display:none;flex-direction:column;min-height:100vh;min-height:100dvh;background:var(--bg);}
+
+/* Sub-header */
+.sub-header{background:var(--navy);padding:16px 20px;display:flex;align-items:center;gap:14px;}
+.btn-back{background:rgba(255,255,255,.1);border:none;border-radius:8px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;}
+.btn-back svg{width:20px;height:20px;color:#fff;}
+.sub-header-title{font-size:17px;font-weight:800;color:#fff;}
+
+/* Form */
+.form-body{flex:1;padding:24px 20px;overflow-y:auto;max-width:480px;margin:0 auto;width:100%;}
+.field{margin-bottom:16px;}
+.field-lbl{font-size:11px;font-weight:700;color:var(--text);display:block;margin-bottom:6px;letter-spacing:.04em;text-transform:uppercase;}
+.field-inp{width:100%;background:#fff;border:1.5px solid var(--border);border-radius:12px;padding:14px 16px;font-size:16px;color:var(--text);font-family:inherit;outline:none;transition:border .2s;}
+.field-inp:focus{border-color:var(--blue);}
+.field-inp::placeholder{color:var(--text-sec);opacity:.6;}
+.btn-action{width:100%;border:none;border-radius:14px;padding:16px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px;}
+.btn-blue{background:var(--blue);color:#fff;}
+.btn-blue:active{opacity:.85;}
+.btn-green{background:var(--green);color:#fff;}
+.btn-green:active{opacity:.85;}
+.btn-red-outline{background:#fff;color:var(--red);border:1.5px solid var(--red);}
+.btn-outline{background:#fff;color:var(--navy);border:1.5px solid var(--border);}
+.btn-outline:active{background:var(--bg);}
+
+/* Client info card */
+.client-card{background:#fff;border:1.5px solid var(--border);border-radius:16px;padding:20px;margin-bottom:16px;}
+.client-name{font-size:18px;font-weight:800;color:var(--navy);margin-bottom:4px;}
+.client-tel{font-size:13px;color:var(--text-sec);margin-bottom:16px;}
+.client-puncte{display:flex;align-items:center;justify-content:space-between;background:var(--bg);border-radius:12px;padding:14px 16px;}
+.client-puncte-label{font-size:12px;color:var(--text-sec);font-weight:600;}
+.client-puncte-val{font-family:'IBM Plex Mono',monospace;font-size:24px;font-weight:700;color:var(--navy);}
+
+/* Suma input */
+.suma-display{background:var(--navy);border-radius:16px;padding:24px;text-align:center;margin-bottom:16px;}
+.suma-label{font-size:12px;color:rgba(255,255,255,.5);margin-bottom:8px;letter-spacing:.06em;text-transform:uppercase;}
+.suma-val{font-family:'IBM Plex Mono',monospace;font-size:42px;font-weight:700;color:#fff;letter-spacing:-.02em;}
+.suma-val span{font-size:20px;color:rgba(255,255,255,.5);}
+.numpad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;}
+.numpad-key{height:60px;background:#fff;border:1.5px solid var(--border);border-radius:14px;font-size:22px;font-weight:700;color:var(--navy);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;font-family:inherit;}
+.numpad-key:active{background:var(--navy);color:#fff;border-color:var(--navy);}
+.numpad-key.del{font-size:16px;color:var(--text-sec);}
+.numpad-key.empty{opacity:0;pointer-events:none;}
+
+/* Puncte echivalent */
+.puncte-equiv{background:var(--blue-light);border-radius:12px;padding:14px 16px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;}
+.puncte-equiv-label{font-size:13px;color:var(--blue);font-weight:600;}
+.puncte-equiv-val{font-family:'IBM Plex Mono',monospace;font-size:18px;font-weight:700;color:var(--navy);}
+
+/* QR Scanner */
+.qr-scanner-wrap{background:var(--navy);border-radius:16px;padding:20px;margin-bottom:16px;text-align:center;}
+.qr-scanner-hint{font-size:14px;color:rgba(255,255,255,.6);margin-bottom:16px;}
+.qr-input-wrap{display:flex;gap:10px;}
+.qr-input{flex:1;background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.15);border-radius:12px;padding:13px 16px;font-size:16px;color:#fff;font-family:'IBM Plex Mono',monospace;letter-spacing:.1em;outline:none;}
+.qr-input:focus{border-color:var(--blue);}
+.qr-input::placeholder{color:rgba(255,255,255,.3);font-family:'Inter',sans-serif;letter-spacing:0;}
+.btn-qr-search{background:var(--blue);border:none;border-radius:12px;padding:13px 18px;font-size:14px;font-weight:700;color:#fff;cursor:pointer;font-family:inherit;white-space:nowrap;}
+
+/* Msg */
+.msg{font-size:13px;text-align:center;padding:12px;border-radius:10px;margin:10px 0;display:none;}
+.msg.show{display:block;}
+.msg.ok{background:var(--green-bg);color:var(--green);}
+.msg.err{background:var(--red-bg);color:var(--red);}
+
+/* Success */
+.success-wrap{text-align:center;padding:32px 20px;}
+.success-ico{width:80px;height:80px;background:var(--green-bg);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:36px;margin:0 auto 20px;}
+.success-title{font-size:22px;font-weight:900;color:var(--navy);margin-bottom:8px;}
+.success-sub{font-size:15px;color:var(--text-sec);line-height:1.6;margin-bottom:32px;}
+
+/* OTP */
+.otp-row{display:flex;gap:10px;justify-content:center;margin:20px 0;}
+.otp-box{width:48px;height:56px;background:#fff;border:1.5px solid var(--border);border-radius:12px;font-size:24px;font-weight:700;color:var(--navy);text-align:center;font-family:'IBM Plex Mono',monospace;outline:none;transition:border .2s;}
+.otp-box:focus{border-color:var(--blue);}
+
+.divider{height:1px;background:var(--border);margin:16px 0;}
+.loader{display:flex;align-items:center;justify-content:center;padding:32px;}
+.spinner{width:28px;height:28px;border:3px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+</style>
+</head>
+<body>
+
+<!-- ===== LOGIN ===== -->
+<div id="screen-login">
+  <div class="login-logo">
+    <div class="login-logo-mark">H</div>
+    <div class="login-logo-text">HUEX<em>.</em></div>
+  </div>
+  <div class="login-sub">Terminal Casă — Autentificare</div>
+  <div class="login-box">
+    <label class="lbl">Email</label>
+    <input type="email" class="inp" id="inp-email" placeholder="email@magazin.ro"/>
+    <label class="lbl">Parolă</label>
+    <input type="password" class="inp" id="inp-parola" placeholder="••••••••"/>
+    <button class="btn-login" onclick="doLogin()">Intră în cont</button>
+    <div class="login-err" id="login-err"></div>
+  </div>
+</div>
+
+<!-- ===== APP PRINCIPAL ===== -->
+<div id="screen-app">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-logo">
+      <div class="header-logo-mark">H</div>
+      <div class="header-logo-text">HUEX<em>.</em></div>
+    </div>
+    <div class="header-right">
+      <div class="header-mag">
+        <strong id="header-mag-name">—</strong>
+        Terminal Casă
+      </div>
+      <button class="btn-logout" onclick="doLogout()">Ieșire</button>
+    </div>
+  </div>
+
+  <!-- Body cu 3 carduri -->
+  <div class="app-body">
+    <div class="cards-grid">
+      <!-- Card 1: Acordare puncte -->
+      <div class="action-card" onclick="showScreen('screen-acorda')">
+        <div class="card-ico">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/><path d="M12 8v8M8 12h8"/></svg>
+        </div>
+        <div class="card-body">
+          <div class="card-title">Acordă puncte</div>
+          <div class="card-desc">Scanează QR-ul clientului și acordă puncte pentru achiziție.</div>
+        </div>
+        <div class="card-arrow">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </div>
+      </div>
+
+      <!-- Card 2: Plată cu puncte (featured) -->
+      <div class="action-card featured" onclick="showScreen('screen-plateste')">
+        <div class="card-ico">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+        </div>
+        <div class="card-body">
+          <div class="card-title">Plată cu puncte</div>
+          <div class="card-desc">Clientul plătește cu punctele acumulate. 1 punct = 1 RON.</div>
+        </div>
+        <div class="card-arrow">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </div>
+      </div>
+
+      <!-- Card 3: Client nou -->
+      <div class="action-card" onclick="showScreen('screen-client-nou')">
+        <div class="card-ico">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+        </div>
+        <div class="card-body">
+          <div class="card-title">Client nou</div>
+          <div class="card-desc">Înregistrează un client nou direct de la casă.</div>
+        </div>
+        <div class="card-arrow">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== ECRAN ACORDARE PUNCTE ===== -->
+<div id="screen-acorda" class="screen-secondary">
+  <div class="sub-header">
+    <button class="btn-back" onclick="showScreen('screen-app')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+    </button>
+    <div class="sub-header-title">Acordă puncte</div>
+  </div>
+  <div class="form-body" id="acorda-body">
+    <!-- Step 1: Scanare QR -->
+    <div id="acorda-step1">
+      <div class="qr-scanner-wrap">
+        <div class="qr-scanner-hint">Scanează sau introdu codul QR al clientului</div>
+        <div class="qr-input-wrap">
+          <input type="text" class="qr-input" id="acorda-qr-inp" placeholder="MST-XXXXXX" oninput="this.value=this.value.toUpperCase()"/>
+          <button class="btn-qr-search" onclick="cautaClientAcorda()">Caută</button>
+        </div>
+      </div>
+      <div class="msg" id="acorda-msg1"></div>
+    </div>
+
+    <!-- Step 2: Client gasit + suma -->
+    <div id="acorda-step2" style="display:none;">
+      <div class="client-card" id="acorda-client-card"></div>
+      <div class="suma-display">
+        <div class="suma-label">Valoare achiziție (RON)</div>
+        <div class="suma-val" id="acorda-suma-display">0<span>.00</span></div>
+      </div>
+      <div class="numpad">
+        <div class="numpad-key" onclick="numpadKey('acorda','1')">1</div>
+        <div class="numpad-key" onclick="numpadKey('acorda','2')">2</div>
+        <div class="numpad-key" onclick="numpadKey('acorda','3')">3</div>
+        <div class="numpad-key" onclick="numpadKey('acorda','4')">4</div>
+        <div class="numpad-key" onclick="numpadKey('acorda','5')">5</div>
+        <div class="numpad-key" onclick="numpadKey('acorda','6')">6</div>
+        <div class="numpad-key" onclick="numpadKey('acorda','7')">7</div>
+        <div class="numpad-key" onclick="numpadKey('acorda','8')">8</div>
+        <div class="numpad-key" onclick="numpadKey('acorda','9')">9</div>
+        <div class="numpad-key" onclick="numpadKey('acorda','.')">.</div>
+        <div class="numpad-key" onclick="numpadKey('acorda','0')">0</div>
+        <div class="numpad-key del" onclick="numpadDel('acorda')">⌫</div>
+      </div>
+      <div class="puncte-equiv" id="acorda-puncte-equiv">
+        <div class="puncte-equiv-label">Puncte de acordat</div>
+        <div class="puncte-equiv-val" id="acorda-puncte-val">0 pct</div>
+      </div>
+      <button class="btn-action btn-green" onclick="confirmAcorda()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        Acordă puncte
+      </button>
+      <button class="btn-action btn-outline" onclick="resetAcorda()" style="margin-top:10px;">← Scanează alt client</button>
+      <div class="msg" id="acorda-msg2"></div>
+    </div>
+
+    <!-- Step 3: Success -->
+    <div id="acorda-step3" style="display:none;">
+      <div class="success-wrap">
+        <div class="success-ico">✓</div>
+        <div class="success-title" id="acorda-success-title">Puncte acordate!</div>
+        <div class="success-sub" id="acorda-success-sub"></div>
+        <button class="btn-action btn-blue" onclick="resetAcorda()">Tranzacție nouă</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== ECRAN PLATĂ CU PUNCTE ===== -->
+<div id="screen-plateste" class="screen-secondary">
+  <div class="sub-header">
+    <button class="btn-back" onclick="showScreen('screen-app')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+    </button>
+    <div class="sub-header-title">Plată cu puncte</div>
+  </div>
+  <div class="form-body">
+    <!-- Step 1: Scanare -->
+    <div id="plateste-step1">
+      <div class="qr-scanner-wrap">
+        <div class="qr-scanner-hint">Scanează sau introdu codul QR al clientului</div>
+        <div class="qr-input-wrap">
+          <input type="text" class="qr-input" id="plateste-qr-inp" placeholder="MST-XXXXXX" oninput="this.value=this.value.toUpperCase()"/>
+          <button class="btn-qr-search" onclick="cautaClientPlateste()">Caută</button>
+        </div>
+      </div>
+      <div class="msg" id="plateste-msg1"></div>
+    </div>
+
+    <!-- Step 2: Client + suma de plata -->
+    <div id="plateste-step2" style="display:none;">
+      <div class="client-card" id="plateste-client-card"></div>
+      <div class="suma-display">
+        <div class="suma-label">Puncte de utilizat</div>
+        <div class="suma-val" id="plateste-suma-display">0<span> pct</span></div>
+      </div>
+      <div class="numpad">
+        <div class="numpad-key" onclick="numpadKey('plateste','1')">1</div>
+        <div class="numpad-key" onclick="numpadKey('plateste','2')">2</div>
+        <div class="numpad-key" onclick="numpadKey('plateste','3')">3</div>
+        <div class="numpad-key" onclick="numpadKey('plateste','4')">4</div>
+        <div class="numpad-key" onclick="numpadKey('plateste','5')">5</div>
+        <div class="numpad-key" onclick="numpadKey('plateste','6')">6</div>
+        <div class="numpad-key" onclick="numpadKey('plateste','7')">7</div>
+        <div class="numpad-key" onclick="numpadKey('plateste','8')">8</div>
+        <div class="numpad-key" onclick="numpadKey('plateste','9')">9</div>
+        <div class="numpad-key empty"></div>
+        <div class="numpad-key" onclick="numpadKey('plateste','0')">0</div>
+        <div class="numpad-key del" onclick="numpadDel('plateste')">⌫</div>
+      </div>
+      <div class="puncte-equiv">
+        <div class="puncte-equiv-label">Reducere aplicată</div>
+        <div class="puncte-equiv-val" id="plateste-ron-val">0 RON</div>
+      </div>
+      <button class="btn-action btn-blue" onclick="solicitaConfirmare()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 11 19.79 19.79 0 0 1 1.61 2.34 2 2 0 0 1 3.58.16h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 7.91a16 16 0 0 0 6.08 6.08l1.81-1.81a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+        Solicită confirmare client
+      </button>
+      <button class="btn-action btn-outline" onclick="resetPlateste()" style="margin-top:10px;">← Scanează alt client</button>
+      <div class="msg" id="plateste-msg2"></div>
+    </div>
+
+    <!-- Step 3: Asteapta confirmare -->
+    <div id="plateste-step3" style="display:none;">
+      <div class="success-wrap">
+        <div class="success-ico" style="background:#EBF5FD;animation:pulse 2s infinite;">📱</div>
+        <div class="success-title">Așteptăm confirmarea</div>
+        <div class="success-sub">Am trimis o notificare clientului. Rugați-l să confirme plata din aplicație.</div>
+        <div class="loader"><div class="spinner"></div></div>
+        <button class="btn-action btn-red-outline" onclick="resetPlateste()" style="margin-top:16px;">Anulează</button>
+      </div>
+    </div>
+
+    <!-- Step 4: Confirmat -->
+    <div id="plateste-step4" style="display:none;">
+      <div class="success-wrap">
+        <div class="success-ico">✓</div>
+        <div class="success-title">Plată confirmată!</div>
+        <div class="success-sub" id="plateste-success-sub"></div>
+        <button class="btn-action btn-blue" onclick="resetPlateste()">Tranzacție nouă</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== ECRAN CLIENT NOU ===== -->
+<div id="screen-client-nou" class="screen-secondary">
+  <div class="sub-header">
+    <button class="btn-back" onclick="showScreen('screen-app')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+    </button>
+    <div class="sub-header-title">Înregistrare client nou</div>
+  </div>
+  <div class="form-body">
+    <!-- Step 1: Date -->
+    <div id="nou-step1">
+      <div class="field"><label class="field-lbl">Prenume</label><input type="text" class="field-inp" id="nou-prenume" placeholder="Ion"/></div>
+      <div class="field"><label class="field-lbl">Nume</label><input type="text" class="field-inp" id="nou-nume" placeholder="Popescu"/></div>
+      <div class="field"><label class="field-lbl">Telefon</label><input type="tel" class="field-inp" id="nou-tel" placeholder="07xx xxx xxx" inputmode="tel"/></div>
+      <div class="field"><label class="field-lbl">Email</label><input type="email" class="field-inp" id="nou-email" placeholder="email@exemplu.ro"/></div>
+      <button class="btn-action btn-blue" onclick="creeazaClientNou()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+        Creează cont
+      </button>
+      <div class="msg" id="nou-msg1"></div>
+    </div>
+
+    <!-- Step 2: OTP verificare email -->
+    <div id="nou-step2" style="display:none;">
+      <p style="font-size:14px;color:var(--text-sec);text-align:center;margin-bottom:8px;">Am trimis un cod de verificare la</p>
+      <p style="font-size:16px;font-weight:700;color:var(--navy);text-align:center;margin-bottom:24px;" id="nou-email-display"></p>
+      <div class="otp-row">
+        <input type="text" class="otp-box" maxlength="1" inputmode="numeric" id="no0" oninput="otpNav(this,0,'no')"/>
+        <input type="text" class="otp-box" maxlength="1" inputmode="numeric" id="no1" oninput="otpNav(this,1,'no')"/>
+        <input type="text" class="otp-box" maxlength="1" inputmode="numeric" id="no2" oninput="otpNav(this,2,'no')"/>
+        <input type="text" class="otp-box" maxlength="1" inputmode="numeric" id="no3" oninput="otpNav(this,3,'no')"/>
+        <input type="text" class="otp-box" maxlength="1" inputmode="numeric" id="no4" oninput="otpNav(this,4,'no')"/>
+        <input type="text" class="otp-box" maxlength="1" inputmode="numeric" id="no5" oninput="otpNav(this,5,'no')"/>
+      </div>
+      <button class="btn-action btn-blue" onclick="verificaOTPNou()">Verifică codul</button>
+      <button class="btn-action btn-outline" style="margin-top:10px;" onclick="showNouStep(1)">← Înapoi</button>
+      <div class="msg" id="nou-msg2"></div>
+    </div>
+
+    <!-- Step 3: Success -->
+    <div id="nou-step3" style="display:none;">
+      <div class="success-wrap">
+        <div class="success-ico">✓</div>
+        <div class="success-title">Client înregistrat!</div>
+        <div class="success-sub" id="nou-success-sub"></div>
+        <div style="background:var(--bg);border-radius:14px;padding:16px;margin-bottom:24px;text-align:center;">
+          <div style="font-size:12px;color:var(--text-sec);margin-bottom:6px;">Cod QR personal</div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:20px;font-weight:700;color:var(--navy);" id="nou-cod-qr"></div>
+        </div>
+        <button class="btn-action btn-blue" onclick="resetClientNou()">Înregistrează alt client</button>
+        <button class="btn-action btn-outline" style="margin-top:10px;" onclick="showScreen('screen-app')">← Înapoi la meniu</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const pb = new PocketBase(window.location.origin);
+let currentMagazin = null;
+let currentUser = null;
+let acordaClient = null;
+let platesteClient = null;
+let platesteContPuncte = null;
+let nouClientData = null;
+let nouOTPCod = '';
+const numpadVals = {acorda:'', plateste:''};
+
+// ===== UTILS =====
+function showScreen(id){
+  ['screen-app','screen-acorda','screen-plateste','screen-client-nou'].forEach(s=>{
+    const el = document.getElementById(s);
+    if(el){
+      el.style.display = 'none';
+      el.classList.remove('screen-secondary');
+    }
+  });
+  const target = document.getElementById(id);
+  if(target){
+    if(id === 'screen-app'){
+      target.style.display = 'flex';
+    } else {
+      target.style.display = 'flex';
+      target.classList.add('screen-secondary');
+      target.style.flexDirection = 'column';
+    }
+  }
+}
+
+function showMsg(id, text, type){
+  const el = document.getElementById(id);
+  if(!el) return;
+  el.textContent = text;
+  el.className = 'msg show ' + type;
+  setTimeout(()=>el.classList.remove('show'), 4000);
+}
+
+function otpNav(el, i, prefix){
+  if(el.value && i<5) document.getElementById(prefix+(i+1)).focus();
+}
+
+function getOTP(prefix){
+  return [0,1,2,3,4,5].map(i=>(document.getElementById(prefix+i)||{value:''}).value).join('');
+}
+
+// ===== NUMPAD =====
+function numpadKey(mode, digit){
+  let val = numpadVals[mode];
+  if(digit === '.' && val.includes('.')) return;
+  if(val === '0' && digit !== '.') val = digit;
+  else val += digit;
+  numpadVals[mode] = val;
+  updateNumpad(mode);
+}
+
+function numpadDel(mode){
+  numpadVals[mode] = numpadVals[mode].slice(0,-1) || '';
+  updateNumpad(mode);
+}
+
+function updateNumpad(mode){
+  const val = parseFloat(numpadVals[mode]) || 0;
+  if(mode === 'acorda'){
+    const procent = currentMagazin?.procent_baza || 10;
+    const puncte = Math.floor(val * procent / 100);
+    document.getElementById('acorda-suma-display').innerHTML = (numpadVals[mode]||'0') + '<span> RON</span>';
+    document.getElementById('acorda-puncte-val').textContent = puncte + ' pct';
+  } else if(mode === 'plateste'){
+    const maxPct = platesteContPuncte?.sold || 0;
+    const pct = Math.min(Math.floor(parseFloat(numpadVals[mode])||0), maxPct);
+    document.getElementById('plateste-suma-display').innerHTML = pct + '<span> pct</span>';
+    document.getElementById('plateste-ron-val').textContent = pct + ' RON';
+  }
+}
+
+// ===== LOGIN =====
+async function doLogin(){
+  const email = document.getElementById('inp-email').value.trim();
+  const parola = document.getElementById('inp-parola').value;
+  const err = document.getElementById('login-err');
+  err.textContent = '';
+  if(!email || !parola){ err.textContent = 'Completează toate câmpurile.'; return; }
+  try{
+    const auth = await pb.collection('users').authWithPassword(email, parola);
+    // Gasim magazinul asociat
+    const userMag = await pb.collection('users_magazin').getFirstListItem(`users="${auth.record.id}"`,{expand:'magazin'});
+    currentMagazin = userMag.expand?.magazin;
+    currentUser = auth.record;
+    document.getElementById('header-mag-name').textContent = currentMagazin?.nume || 'Magazin';
+    document.getElementById('screen-login').style.display = 'none';
+    showScreen('screen-app');
+  }catch(e){
+    err.textContent = 'Email sau parolă incorecte.';
+  }
+}
+
+function doLogout(){
+  pb.authStore.clear();
+  currentMagazin = null;
+  currentUser = null;
+  document.getElementById('screen-login').style.display = 'flex';
+  showScreen('screen-app');
+  document.getElementById('screen-app').style.display = 'none';
+}
+
+// ===== ACORDARE PUNCTE =====
+async function cautaClientAcorda(){
+  const cod = document.getElementById('acorda-qr-inp').value.trim();
+  if(!cod){ showMsg('acorda-msg1','Introdu codul QR.','err'); return; }
+  try{
+    const col = await pb.collection('colaboratori').getFirstListItem(`cod_qr="${cod}"`);
+    acordaClient = col;
+    // Cauta contul de puncte la magazinul curent
+    let cont = null;
+    try{
+      cont = await pb.collection('conturi_puncte').getFirstListItem(`colaborator="${col.id}" && magazin="${currentMagazin.id}"`);
+    }catch(e){
+      // Creeaza cont nou
+      cont = await pb.collection('conturi_puncte').create({colaborator:col.id,magazin:currentMagazin.id,sold:0,cumulat:0,nivel:'silver'});
+    }
+    document.getElementById('acorda-client-card').innerHTML = `
+      <div class="client-name">${col.nume}</div>
+      <div class="client-tel">${col.telefon}</div>
+      <div class="client-puncte">
+        <div class="client-puncte-label">Puncte disponibile</div>
+        <div class="client-puncte-val">${Number(cont.sold||0).toLocaleString('ro-RO')} pct</div>
+      </div>`;
+    document.getElementById('acorda-step1').style.display = 'none';
+    document.getElementById('acorda-step2').style.display = 'block';
+    numpadVals.acorda = '';
+    updateNumpad('acorda');
+  }catch(e){
+    showMsg('acorda-msg1','Client negăsit. Verifică codul QR.','err');
+  }
+}
+
+async function confirmAcorda(){
+  const valoare = parseFloat(numpadVals.acorda) || 0;
+  if(valoare <= 0){ showMsg('acorda-msg2','Introdu valoarea achiziției.','err'); return; }
+  const procent = currentMagazin?.procent_baza || 10;
+  const puncte = Math.floor(valoare * procent / 100);
+  try{
+    // Creeaza tranzactie
+    const txn = await pb.collection('tranzactii').create({
+      colaborator: acordaClient.id,
+      magazin: currentMagazin.id,
+      tip: 'emitere',
+      status: 'confirmata',
+      valoare_neta: valoare,
+      puncte: puncte,
+      confirmat_la: new Date().toISOString()
+    });
+    // Actualizeaza sold
+    const cont = await pb.collection('conturi_puncte').getFirstListItem(`colaborator="${acordaClient.id}" && magazin="${currentMagazin.id}"`);
+    await pb.collection('conturi_puncte').update(cont.id,{
+      sold: (cont.sold||0) + puncte,
+      cumulat: (cont.cumulat||0) + puncte
+    });
+    document.getElementById('acorda-success-title').textContent = `+${puncte} puncte acordate!`;
+    document.getElementById('acorda-success-sub').textContent = `${acordaClient.nume} a primit ${puncte} puncte pentru o achiziție de ${valoare} RON la ${currentMagazin.nume}.`;
+    document.getElementById('acorda-step2').style.display = 'none';
+    document.getElementById('acorda-step3').style.display = 'block';
+  }catch(e){
+    showMsg('acorda-msg2','Eroare la acordarea punctelor: '+e.message,'err');
+  }
+}
+
+function resetAcorda(){
+  acordaClient = null;
+  numpadVals.acorda = '';
+  document.getElementById('acorda-qr-inp').value = '';
+  document.getElementById('acorda-step1').style.display = 'block';
+  document.getElementById('acorda-step2').style.display = 'none';
+  document.getElementById('acorda-step3').style.display = 'none';
+}
+
+// ===== PLATĂ CU PUNCTE =====
+async function cautaClientPlateste(){
+  const cod = document.getElementById('plateste-qr-inp').value.trim();
+  if(!cod){ showMsg('plateste-msg1','Introdu codul QR.','err'); return; }
+  try{
+    const col = await pb.collection('colaboratori').getFirstListItem(`cod_qr="${cod}"`);
+    platesteClient = col;
+    const cont = await pb.collection('conturi_puncte').getFirstListItem(`colaborator="${col.id}" && magazin="${currentMagazin.id}"`);
+    platesteContPuncte = cont;
+    if(!cont.sold || cont.sold <= 0){
+      showMsg('plateste-msg1','Clientul nu are puncte disponibile la acest magazin.','err');
+      return;
+    }
+    document.getElementById('plateste-client-card').innerHTML = `
+      <div class="client-name">${col.nume}</div>
+      <div class="client-tel">${col.telefon}</div>
+      <div class="client-puncte">
+        <div class="client-puncte-label">Puncte disponibile</div>
+        <div class="client-puncte-val">${Number(cont.sold||0).toLocaleString('ro-RO')} pct</div>
+      </div>`;
+    document.getElementById('plateste-step1').style.display = 'none';
+    document.getElementById('plateste-step2').style.display = 'block';
+    numpadVals.plateste = '';
+    updateNumpad('plateste');
+  }catch(e){
+    showMsg('plateste-msg1','Client negăsit.','err');
+  }
+}
+
+async function solicitaConfirmare(){
+  const puncte = Math.min(Math.floor(parseFloat(numpadVals.plateste)||0), platesteContPuncte.sold||0);
+  if(puncte <= 0){ showMsg('plateste-msg2','Introdu numărul de puncte.','err'); return; }
+  try{
+    // Creeaza tranzactie pending
+    const txn = await pb.collection('tranzactii').create({
+      colaborator: platesteClient.id,
+      magazin: currentMagazin.id,
+      tip: 'utilizare',
+      status: 'pending',
+      valoare_neta: puncte,
+      puncte: puncte
+    });
+    // Trimite notificare push
+    await fetch('/push/solicit-confirmare',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        txnId: txn.id,
+        colaboratorId: platesteClient.id,
+        magazinNume: currentMagazin.nume,
+        puncte: puncte,
+        valoare: puncte,
+        email: platesteClient.email || '',
+        secret: 'huex-push-2026'
+      })
+    });
+    document.getElementById('plateste-step2').style.display = 'none';
+    document.getElementById('plateste-step3').style.display = 'block';
+    // Polling pentru confirmare
+    let checkCount = 0;
+    const checkInterval = setInterval(async()=>{
+      checkCount++;
+      if(checkCount > 30){ clearInterval(checkInterval); return; }
+      try{
+        const txnCheck = await pb.collection('tranzactii').getOne(txn.id);
+        if(txnCheck.status === 'confirmata'){
+          clearInterval(checkInterval);
+          // Actualizeaza sold
+          await pb.collection('conturi_puncte').update(platesteContPuncte.id,{
+            sold: Math.max(0,(platesteContPuncte.sold||0) - puncte)
+          });
+          document.getElementById('plateste-success-sub').textContent = `${platesteClient.nume} a utilizat ${puncte} puncte (${puncte} RON reducere) la ${currentMagazin.nume}.`;
+          document.getElementById('plateste-step3').style.display = 'none';
+          document.getElementById('plateste-step4').style.display = 'block';
+        } else if(txnCheck.status === 'anulata'){
+          clearInterval(checkInterval);
+          showMsg('plateste-msg2','Clientul a refuzat plata.','err');
+          document.getElementById('plateste-step3').style.display = 'none';
+          document.getElementById('plateste-step2').style.display = 'block';
+        }
+      }catch(e){}
+    }, 3000);
+  }catch(e){
+    showMsg('plateste-msg2','Eroare: '+e.message,'err');
+  }
+}
+
+function resetPlateste(){
+  platesteClient = null;
+  platesteContPuncte = null;
+  numpadVals.plateste = '';
+  document.getElementById('plateste-qr-inp').value = '';
+  document.getElementById('plateste-step1').style.display = 'block';
+  document.getElementById('plateste-step2').style.display = 'none';
+  document.getElementById('plateste-step3').style.display = 'none';
+  document.getElementById('plateste-step4').style.display = 'none';
+}
+
+// ===== CLIENT NOU =====
+function showNouStep(n){
+  [1,2,3].forEach(i=>document.getElementById('nou-step'+i).style.display=i===n?'block':'none');
+}
+
+async function creeazaClientNou(){
+  const prenume = document.getElementById('nou-prenume').value.trim();
+  const nume = document.getElementById('nou-nume').value.trim();
+  const tel = document.getElementById('nou-tel').value.trim();
+  const email = document.getElementById('nou-email').value.trim();
+  if(!prenume||!nume||!tel||!email){ showMsg('nou-msg1','Completează toate câmpurile.','err'); return; }
+  // Verifica daca exista deja
+  try{
+    await pb.collection('colaboratori').getFirstListItem(`telefon="${tel}"`);
+    showMsg('nou-msg1','Numărul de telefon este deja înregistrat.','err');
+    return;
+  }catch(e){}
+  nouClientData = {nume:prenume+' '+nume,telefon:tel,email};
+  // Trimite OTP
+  nouOTPCod = String(Math.floor(100000+Math.random()*900000));
+  const expires = new Date(Date.now()+10*60*1000).toISOString();
+  try{
+    await pb.collection('otp_sessions').create({telefon:tel,cod:nouOTPCod,expires_at:expires});
+    await fetch('/push/send-otp-email',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,cod:nouOTPCod,nume:prenume})});
+    document.getElementById('nou-email-display').textContent = email;
+    showNouStep(2);
+    document.getElementById('no0').focus();
+  }catch(e){
+    showMsg('nou-msg1','Eroare la trimiterea codului: '+e.message,'err');
+  }
+}
+
+async function verificaOTPNou(){
+  const cod = getOTP('no');
+  if(cod.length<6){ showMsg('nou-msg2','Introdu toate cele 6 cifre.','err'); return; }
+  try{
+    const session = await pb.collection('otp_sessions').getFirstListItem(`telefon="${nouClientData.telefon}" && cod="${cod}"`);
+    if(new Date(session.expires_at)<new Date()){ showMsg('nou-msg2','Codul a expirat.','err'); return; }
+    await pb.collection('otp_sessions').delete(session.id).catch(()=>{});
+    // Creeaza colaborator
+    const cod_qr = 'MST-'+Math.random().toString(36).substr(2,6).toUpperCase();
+    const newCol = await pb.collection('colaboratori').create({...nouClientData,cod_qr});
+    // Creeaza cont puncte la magazinul curent
+    await pb.collection('conturi_puncte').create({colaborator:newCol.id,magazin:currentMagazin.id,sold:0,cumulat:0,nivel:'silver'}).catch(()=>{});
+    // Email bun venit
+    await fetch('/push/send-welcome-email',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:nouClientData.email,nume:nouClientData.nume.split(' ')[0]})}).catch(()=>{});
+    document.getElementById('nou-success-sub').textContent = `${nouClientData.nume} a fost înregistrat cu succes și adăugat la ${currentMagazin.nume}.`;
+    document.getElementById('nou-cod-qr').textContent = cod_qr;
+    showNouStep(3);
+  }catch(e){
+    showMsg('nou-msg2','Cod incorect.','err');
+  }
+}
+
+function resetClientNou(){
+  nouClientData = null;
+  nouOTPCod = '';
+  document.getElementById('nou-prenume').value='';
+  document.getElementById('nou-nume').value='';
+  document.getElementById('nou-tel').value='';
+  document.getElementById('nou-email').value='';
+  [0,1,2,3,4,5].forEach(i=>{const el=document.getElementById('no'+i);if(el)el.value='';});
+  showNouStep(1);
+}
+</script>
+<script>if('serviceWorker' in navigator)navigator.serviceWorker.register('/casa/sw.js').catch(()=>{});</script>
+</body>
+</html>
